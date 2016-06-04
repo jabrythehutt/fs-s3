@@ -48,6 +48,9 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
     
 ## Examples
 
+### Live example
+Try listing files and uploading into your S3 bucket [here](https://djabry.github.io/fs-s3).
+
 ### Write data to a file
 
 ```javascript
