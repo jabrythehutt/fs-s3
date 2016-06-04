@@ -32,12 +32,29 @@ export interface WriteOptions {
 
 export interface FileService {
 
+    /**
+     * Read the contents of a file into a string
+     * @param file {object} - The file to read
+     */
     readString(file:AnyFile):Promise<string>;
 
+    /**
+     * Write data to a file
+     * @param body {string | fs.ReadStream} - The data to write
+     * @param file {object} - The destination file to write
+     * @param options {object} - The optional set of write parameters
+     */
     write(body:string | fs.ReadStream, file:AnyFile, options?:WriteOptions):Promise<ScannedFile>;
 
+    /**
+     * Copy all file/s from one location to another
+     *
+     * @param source {object} - The source file or directory
+     * @param destination {object} - The destination file or directory
+     * @param options {object} - The optional set of write parameters
+     */
     copy(source:AnyFile, destination:AnyFile, options?:WriteOptions):Promise<ScannedFile[]>;
-    //calculateMD5(file:AnyFile):Promise<string>;
+
     /**
      * Recursively list all the files in the dir
      * @param dir
@@ -62,7 +79,7 @@ export interface FileService {
 
     /**
      * Waits for a file to be written
-     * @param file
+     * @param file {object} - The file to wait for
      */
     waitForFile(file:AnyFile):Promise<ScannedFile>;
 
@@ -73,7 +90,7 @@ export interface FileService {
      * @param destinationFolder
      * @param writeOptions
      */
-    uploadFiles(files:File[], destinationFolder:AnyFile, writeOptions?:WriteOptions):Promise<ScannedFile[]>;
+    uploadFiles(files:FileList, destinationFolder:AnyFile, writeOptions?:WriteOptions):Promise<ScannedFile[]>;
 
 
     calculateUploadMD5(file:File):Promise<string>;
@@ -315,9 +332,18 @@ export class DefaultFileService implements FileService {
     }
 
 
-    uploadFiles(sourceFiles:File[], destinationFolder:AnyFile, options?:WriteOptions):Promise<ScannedFile[]> {
+    uploadFiles(inputList:FileList, destinationFolder:AnyFile, options?:WriteOptions):Promise<ScannedFile[]> {
 
         options = options || {makePublic: false, parallel: false, overwrite: false, skipSame: true};
+
+        var sourceFiles = [];
+        //Arrange input files into a regular array
+        for (var ix = 0; ix < inputList.length; ix++) {
+
+            var file = inputList.item(ix);
+            sourceFiles.push(file);
+
+        }
 
         return this.findDestinationFiles(options, destinationFolder).then(destinationFiles => {
 

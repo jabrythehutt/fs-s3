@@ -2,24 +2,171 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Standalone fss3 example</title>
+    <title>Standalone fs-s3 example</title>
 </head>
 <body>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+      integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 <script src="https://sdk.amazonaws.com/js/aws-sdk-2.3.17.min.js"></script>
 <script src="../dist/fs-s3-standalone.min.js"></script>
-<div>
-    <form>
-        <div class="form-group">
-            <input>
-        </div>
-    </form>
 
+<style>
+    .btn-file {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-file input[type=file] {
+        position: absolute;
+        top: 0;
+        right: 0;
+        min-width: 100%;
+        min-height: 100%;
+        font-size: 100px;
+        text-align: right;
+        filter: alpha(opacity=0);
+        opacity: 0;
+        outline: none;
+        background: white;
+        cursor: inherit;
+        display: block;
+    }
+</style>
+<div class="jumbotron">
+    <div class="container">
+        <form>
+            <div class="form-group">
+                <label for="awsAccessKey" class="control-label">AWS Access Key</label>
+                <input id="awsAccessKey" type="text" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="awsSecretKey" class="control-label">AWS Secret Key</label>
+                <input id="awsSecretKey" type="password" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="bucketName" class="control-label">Bucket Name</label>
+                <input id="bucketName" type="text" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <button type="button" id="listFilesButton" class="btn btn-primary">List files</button>
+                <span class="btn btn-primary btn-file">
+                    Upload files<input type="file" id="fileUploadButton" multiple/>
+                </span>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="container">
+    <ul id="filesList" class="list-group">
+
+    </ul>
 </div>
 
 <script>
-    var s3 = new AWS.S3({region: "eu-west-1"});
-    var fileService = new fss3.DefaultFileService(s3);
-    console.log("Loaded file service");
+
+    NodeList.prototype.forEach = Array.prototype.forEach;
+
+    function setupCreds() {
+        var accessKey = document.getElementById("awsAccessKey").value;
+        var secretKey = document.getElementById("awsSecretKey").value;
+        if (accessKey && secretKey) {
+
+            AWS.config.credentials = new AWS.Credentials(accessKey, secretKey);
+            console.log("Initialised credentials");
+            return true;
+
+        } else {
+
+            return false;
+        }
+    }
+
+    function setupFS() {
+
+        if (setupCreds()) {
+            var s3 = new AWS.S3();
+            return new fss3.DefaultFileService(s3);
+
+        }
+    }
+
+    function renderList(items) {
+        clearList();
+
+        var filesList = document.getElementById("filesList");
+        items.forEach(function (item) {
+
+            var li = document.createElement("li");
+            li.setAttribute("class", "list-group-item");
+            li.appendChild(document.createTextNode(item.key));
+
+            filesList.appendChild(li);
+        });
+
+    }
+
+    function clearList() {
+
+        var listElement = document.getElementById("filesList");
+
+        while (listElement.firstChild) {
+            listElement.removeChild(listElement.firstChild);
+        }
+
+    }
+
+    function listFiles() {
+        console.log("Clicked list files");
+
+        var bucket = document.getElementById("bucketName").value;
+
+        if (bucket) {
+
+            var fileService = setupFS();
+
+            if (fileService) {
+                fileService.list({bucket: bucket, key: ""}).then(function (list) {
+
+                    renderList(list);
+                    console.log("retrieved files");
+
+                });
+
+            }
+
+        }
+
+        return false;
+    }
+
+    function uploadFiles(event) {
+
+        var bucket = document.getElementById("bucketName").value;
+        var files = document.getElementById("fileUploadButton").files;
+
+        if (bucket && files && files.length) {
+
+            var fileService = setupFS();
+
+            if (fileService) {
+
+                fileService.uploadFiles(files, {bucket: bucket, key: ""}).then(function (filesUploaded) {
+
+                    listFiles();
+                });
+
+
+            }
+        }
+
+
+    }
+
+    document.getElementById("listFilesButton").onclick = listFiles;
+
+    document.getElementById("fileUploadButton").onchange = uploadFiles;
+
+
 </script>
 </body>
 </html>

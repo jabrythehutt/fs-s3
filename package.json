@@ -4,6 +4,7 @@
   "description": "Yet another AWS S3 wrapper to simplify your life",
   "main": "fs-s3.js",
   "scripts": {
+    "prepublish": "npm run test && npm run dist",
     "compile": "tsc",
     "dist": "webpack",
     "test": "npm run compile && mocha"
