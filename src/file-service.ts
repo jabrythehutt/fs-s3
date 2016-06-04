@@ -12,21 +12,20 @@ import * as crypto from "crypto";
  */
 
 export interface AnyFile {
-    bucket?:string;
-    key:string;
+    bucket?:string; //The S3 bucket of the file or left out if a local file
+    key:string; //The path to the local file or the s3 key
 }
 
 export interface ScannedFile extends AnyFile {
-    md5:string;
+    md5:string; //The md5 hash of the file content
 }
 
 export interface WriteOptions {
-    skipSame?:boolean;
-    overwrite?:boolean;
-    parallel?:boolean;
-    makePublic?:boolean;
-    //Custom s3 params to include in the write request (if writing to s3)
-    s3Params?:{[key:string]:any};
+    skipSame?:boolean; //Skip writing files with the same md5 hash
+    overwrite?:boolean; //Overwrite files with the same key/path
+    parallel?:boolean; //Perform multiple write operations in parallel
+    makePublic?:boolean; //Make the object public (if writing to S3)
+    s3Params?:{[key:string]:any}; //Custom s3 params to include in the write request (if writing to s3)
 }
 
 
