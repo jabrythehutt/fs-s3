@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "sourceMap": true,
+    "removeComments": false,
+    "declaration": true
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "filesGlob": [
+    "custom-typings.d.ts",
+    "typings/index.d.ts"
+  ]
+}
