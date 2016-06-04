@@ -7,11 +7,19 @@
 <body>
 <script src="https://sdk.amazonaws.com/js/aws-sdk-2.3.17.min.js"></script>
 <script src="../dist/fs-s3-standalone.min.js"></script>
+<div>
+    <form>
+        <div class="form-group">
+            <input>
+        </div>
+    </form>
+
+</div>
+
 <script>
     var s3 = new AWS.S3({region: "eu-west-1"});
     var fileService = new fss3.DefaultFileService(s3);
     console.log("Loaded file service");
-
 </script>
 </body>
 </html>
