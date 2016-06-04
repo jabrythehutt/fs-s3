@@ -73,6 +73,7 @@ fileService.copy({key:"/Users/djabry/Desktop"}, {bucket:"my-bucket", key:"my-fil
         console.log("Successfully written",writtenFiles.length,"files");
     });
 ```
+
     
 ## API
 
