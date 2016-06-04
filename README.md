@@ -10,7 +10,9 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
 
 1. Install it 
     
-    ```npm install --save @djabry/fs-s3```
+    ```shell
+    npm install --save @djabry/fs-s3
+    ```
 
 2. Import the script
 
