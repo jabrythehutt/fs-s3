@@ -1,6 +1,6 @@
 #Yet another S3 wrapper
 
-I often find myself reinventing the wheel when using the AWS SDK for S3 operations in the browser and in Node.
+I often find myself reinventing the wheel when using the AWS SDK for S3 broswer and node-based operations. 
 
 Copying and deleting multiple files just requires too much boilerplate code and existing efforts (such as [node-s3-client](https://github.com/andrewrk/node-s3-client)) have either been abandoned, do not support promises or only work for Node.
 
@@ -85,7 +85,7 @@ export interface WriteOptions {
 
 ### FileService
 
-These are the operations that the file service can perform
+These are the operations that the file service can perform.
 
 ```typescript
 export interface IFileService {
@@ -125,7 +125,7 @@ export interface IFileService {
      * @param parallel {boolean} - Whether to delete files in parallel
      */
     deleteAll(file:AnyFile, parallel?:boolean):Promise<AnyFile[]>;
-    
+
 
     /**
      * Checks if it exists and is a file
@@ -149,7 +149,11 @@ export interface IFileService {
      */
     uploadFiles(files:FileList, destinationFolder:AnyFile, writeOptions?:WriteOptions):Promise<ScannedFile[]>;
 
-
+    /**
+     * Calculate the MD5 checksum of a browser file
+     * @param file {File}
+     * @returns {Promise<string>}
+     */
     calculateUploadMD5(file:File):Promise<string>;
 
     /**

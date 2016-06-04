@@ -90,7 +90,11 @@ export interface IFileService {
      */
     uploadFiles(files:FileList, destinationFolder:AnyFile, writeOptions?:WriteOptions):Promise<ScannedFile[]>;
 
-
+    /**
+     * Calculate the MD5 checksum of a browser file
+     * @param file {File}
+     * @returns {Promise<string>}
+     */
     calculateUploadMD5(file:File):Promise<string>;
 
     /**
@@ -452,6 +456,11 @@ export class FileService implements IFileService {
 
     }
 
+    /**
+     * Calculate the MD5 checksum of a browser file
+     * @param file {File}
+     * @returns {any|Promise<T>|Promise}
+     */
     calculateUploadMD5(file:File):Promise<string> {
 
 
