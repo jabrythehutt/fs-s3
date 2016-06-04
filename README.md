@@ -46,6 +46,27 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
        var fileService = new fss3.FileService(s3);
     ```
     
+## Examples
+
+### Write data to a file
+
+```javascript
+
+    //A very important message
+    var importantMessage = "Don't drink and derive";
+    
+    //Write the important message to S3
+    fileService.write(importantMessage, {bucket:"my-bucket",key:"messages/important.txt"});
+    
+    //Write it to my desktop
+    fileService.write(importantMessage, {key:"/Users/djabry/Desktop/important.txt"});
+    
+    //Write it to a new folder on my desktop
+    fileService.write(importantMessage, {key:"/Users/djabry/Desktop/must_read/important.txt"});
+    
+```
+
+    
 ## API
 
 ### AnyFile
