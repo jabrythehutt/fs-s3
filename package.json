@@ -4,7 +4,8 @@
   "description": "Yet another AWS S3 wrapper to simplify your life",
   "main": "fs-s3.js",
   "scripts": {
-    "test": "test"
+    "compile": "tsc",
+    "test": "npm run compile && mocha"
   },
   "repository": {
     "type": "git",
@@ -21,7 +22,11 @@
   },
   "homepage": "https://github.com/djabry/fs-s3#readme",
   "devDependencies": {
-    "@djabry/aws-sdk-typescript": "0.0.2"
+    "@djabry/aws-sdk-typescript": "0.0.2",
+    "aws-sdk": "^2.3.17",
+    "mocha": "^2.5.3",
+    "tsc": "^1.20150623.0",
+    "typescript": "^1.8.10"
   },
   "dependencies": {
     "mime": "^1.3.4"
