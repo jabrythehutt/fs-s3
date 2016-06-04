@@ -16,11 +16,17 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
 
     * Node or browser with modern build system
 
-        ES6 or TypeScript: ```import * as fss3 from '@djabry/fs-s3';```
+        ES6 or TypeScript: 
+         ```javascript
+         import * as fss3 from '@djabry/fs-s3';
+         ```
 
         or
 
-        Standard: ```var fss3 = require("fs-s3");```
+        Standard:
+         ```javascript
+         var fss3 = require("fs-s3");
+         ```
 
     * Simple browser
 
