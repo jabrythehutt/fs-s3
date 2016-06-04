@@ -6,3 +6,25 @@ Copying and deleting multiple files just requires too much boilerplate code and 
 
 If you like promises (not the Donald Trump variety, but the ES6y ones that tend to get resolved) then this could be yet another AWS S3 wrapper for you.
 
+## Usage
+
+```npm install --save @djabry/fs-s3```
+
+1. Import the script
+
+    * Node or browser with modern packaging system
+
+        ES6 or TypeScript: ```import * as fss3 from '@djabry/fs-s3';```
+
+        or
+
+        Standard: ```var fss3 = require("fs-s3");```
+
+    * Simple browser
+
+         ```<script src="node_modules/@djabry/fs-s3/dist/fs-s3-standalone.min.js"></script>```
+
+
+
+
+

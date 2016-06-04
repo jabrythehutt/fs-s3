@@ -30,7 +30,7 @@ export interface WriteOptions {
 }
 
 
-export interface FileService {
+export interface IFileService {
 
     /**
      * Read the contents of a file into a string
@@ -106,7 +106,7 @@ export interface FileService {
 
 }
 
-export class DefaultFileService implements FileService {
+export class FileService implements IFileService {
 
     /**
      * Execute promises in series or parallel
@@ -186,6 +186,10 @@ export class DefaultFileService implements FileService {
         });
     }
 
+    /**
+     * Waits for a file to be written
+     * @param file {object} - The file to wait for
+     */
     waitForFile(file:AnyFile):Promise<ScannedFile> {
         if (!file.bucket) {
             //Local wait is not supported yet
@@ -310,6 +314,12 @@ export class DefaultFileService implements FileService {
     }
 
 
+    /**
+     *  Upload a single file from the browser
+     * @param file
+     * @param destination
+     * @param writeOptions
+     */
     uploadFile(file:File, destination:AnyFile, writeOptions?:WriteOptions, destinationFiles?:ScannedFile[]):Promise<ScannedFile> {
 
         writeOptions = writeOptions || {overwrite: false, makePublic: false};
@@ -332,6 +342,12 @@ export class DefaultFileService implements FileService {
     }
 
 
+    /**
+     * Upload files in the browser
+     * @param files
+     * @param destinationFolder
+     * @param writeOptions
+     */
     uploadFiles(inputList:FileList, destinationFolder:AnyFile, options?:WriteOptions):Promise<ScannedFile[]> {
 
         options = options || {makePublic: false, parallel: false, overwrite: false, skipSame: true};
@@ -391,6 +407,10 @@ export class DefaultFileService implements FileService {
     }
 
 
+    /**
+     * Checks if it exists and is a file
+     * @param file
+     */
     isFile(file:AnyFile):Promise<ScannedFile> {
 
         return this.list(file).then(files => {
@@ -552,6 +572,10 @@ export class DefaultFileService implements FileService {
 
     }
 
+    /**
+     * Read the contents of a file into a string
+     * @param file {object} - The file to read
+     */
     readString(file:AnyFile):Promise<string> {
 
 
@@ -718,6 +742,10 @@ export class DefaultFileService implements FileService {
 
     }
 
+    /**
+     * Recursively list all the files in the dir
+     * @param dir
+     */
     list(file:AnyFile):Promise<ScannedFile[]> {
         //console.log("Listing files", JSON.stringify(file));
         file = this.fixFile(file);
@@ -932,6 +960,11 @@ export class DefaultFileService implements FileService {
     }
 
 
+    /**
+     * Delete all files in the folder
+     * @param file
+     * @param parallel
+     */
     deleteAll(file:AnyFile, parallel?:boolean):Promise<AnyFile[]> {
 
 
@@ -950,6 +983,13 @@ export class DefaultFileService implements FileService {
     }
 
 
+    /**
+     * Copy all file/s from one location to another
+     *
+     * @param source {object} - The source file or directory
+     * @param destination {object} - The destination file or directory
+     * @param options {object} - The optional set of write parameters
+     */
     copy(source:AnyFile, destination:AnyFile, options?:WriteOptions):Promise<ScannedFile[]> {
 
         options = options || {makePublic: false, parallel: false, overwrite: false, skipSame: true};
@@ -992,6 +1032,12 @@ export class DefaultFileService implements FileService {
         return (file.bucket || "") + "/" + file.key;
     }
 
+    /**
+     * Write data to a file
+     * @param body {string | fs.ReadStream} - The data to write
+     * @param file {object} - The destination file to write
+     * @param options {object} - The optional set of write parameters
+     */
     write(body:string | fs.ReadStream, file:AnyFile, options?:WriteOptions):Promise<ScannedFile> {
         options = options || {makePublic: false, parallel: false, overwrite: true, skipSame: true};
 

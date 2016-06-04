@@ -66,6 +66,10 @@
 
     NodeList.prototype.forEach = Array.prototype.forEach;
 
+    /**
+     * Setup S3 credentials
+     * @returns {boolean} - true if set up successfully
+     */
     function setupCreds() {
         var accessKey = document.getElementById("awsAccessKey").value;
         var secretKey = document.getElementById("awsSecretKey").value;
@@ -81,15 +85,23 @@
         }
     }
 
+    /**
+     * Set up the file service
+     * @returns {FileService|*}
+     */
     function setupFS() {
 
         if (setupCreds()) {
             var s3 = new AWS.S3();
-            return new fss3.DefaultFileService(s3);
+            return new fss3.FileService(s3);
 
         }
     }
 
+    /**
+     * Update the files list with the file items
+     * @param items
+     */
     function renderList(items) {
         clearList();
 
@@ -105,6 +117,9 @@
 
     }
 
+    /**
+     * Clear the items in the file list
+     */
     function clearList() {
 
         var listElement = document.getElementById("filesList");
@@ -115,6 +130,10 @@
 
     }
 
+    /**
+     * Find all the files in the test bucket and render them on the page
+     * @returns {boolean}
+     */
     function listFiles() {
         console.log("Clicked list files");
 
@@ -139,6 +158,10 @@
         return false;
     }
 
+    /**
+     * Upload the selected files
+     * @param event
+     */
     function uploadFiles(event) {
 
         var bucket = document.getElementById("bucketName").value;
@@ -152,6 +175,7 @@
 
                 fileService.uploadFiles(files, {bucket: bucket, key: ""}).then(function (filesUploaded) {
 
+                    console.log("Uploaded ", filesUploaded.length, " files");
                     listFiles();
                 });
 

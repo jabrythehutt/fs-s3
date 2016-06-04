@@ -5,7 +5,7 @@
  * Created by djabry on 03/05/2016.
  */
 import {S3} from "aws-sdk";
-import {DefaultFileService} from "../src/file-service";
+import {FileService} from "../src/file-service";
 import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
@@ -14,7 +14,7 @@ var testConfig = require("./test-config.json");
 var s3Params = testConfig.s3;
 
 const s3 = new S3(s3Params);
-var fileService = new DefaultFileService(s3);
+var fileService = new FileService(s3);
 
 var testBucket = testConfig.s3.params.Bucket;
 
