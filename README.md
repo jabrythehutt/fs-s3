@@ -51,26 +51,24 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
 ### Write data to a file
 
 ```javascript
+//A very important message
+var importantMessage = "Don't drink and derive";
 
-    //A very important message
-    var importantMessage = "Don't drink and derive";
-    
-    //Write the important message to S3
-    fileService.write(importantMessage, {bucket:"my-bucket",key:"messages/important.txt"});
-    
-    //Write it to my desktop
-    fileService.write(importantMessage, {key:"/Users/djabry/Desktop/important.txt"});
-    
-    //Write it to a new folder on my desktop
-    fileService.write(importantMessage, {key:"/Users/djabry/Desktop/must_read/important.txt"});
-    
+//Write the important message to S3
+fileService.write(importantMessage, {bucket:"my-bucket",key:"messages/important.txt"});
+
+//Write it to my desktop
+fileService.write(importantMessage, {key:"/Users/djabry/Desktop/important.txt"});
+
+//Write it to a new folder on my desktop
+fileService.write(importantMessage, {key:"/Users/djabry/Desktop/must_read/important.txt"});
 ```
 
 ### Copy files
 
 ``` javascript
-    //Copy all the files from my desktop to S3
-    fileService.copy({key:"/Users/djabry/Desktop"}, {bucket:"my-bucket", key:"my-files"})
+//Copy all the files from my desktop to S3
+fileService.copy({key:"/Users/djabry/Desktop"}, {bucket:"my-bucket", key:"my-files"})
     .then(function(writtenFiles){
         console.log("Successfully written",writtenFiles.length,"files");
     });

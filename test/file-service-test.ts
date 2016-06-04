@@ -18,6 +18,7 @@ var fileService = new FileService(s3);
 
 var testBucket = testConfig.s3.params.Bucket;
 
+
 var testFilePath = "test/test-file.txt";
 var s3Destination = "test/"+(new Date()).getTime() +".txt";
 var testFileText = "This is a test file";
@@ -44,7 +45,7 @@ describe("Test File Service", function () {
 
     beforeEach(function(done){
 
-       deleteAllTestFiles().then(() => {
+        deleteAllTestFiles().then(() => {
 
             done();
 
@@ -110,6 +111,6 @@ describe("Test File Service", function () {
 
         });
     });
-    
+
 
 });
