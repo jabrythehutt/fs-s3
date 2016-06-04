@@ -30,7 +30,9 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
 
     * Simple browser
 
-         ```<script src="node_modules/@djabry/fs-s3/dist/fs-s3-standalone.min.js"></script>```
+         ```html
+         <script src="node_modules/@djabry/fs-s3/dist/fs-s3-standalone.min.js"></script>
+         ```
 
 3. Create a new FileService object
 
