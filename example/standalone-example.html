@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Standalone fss3 example</title>
+</head>
+<body>
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.3.17.min.js"></script>
+<script src="../dist/fs-s3-standalone.min.js"></script>
+<script>
+    var s3 = new AWS.S3({region: "eu-west-1"});
+    var fileService = new fss3.DefaultFileService(s3);
+    console.log("Loaded file service");
+
+</script>
+</body>
+</html>

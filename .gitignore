@@ -88,4 +88,6 @@ typings
 **/*.map
 **/*.d.ts
 !custom-typings.d.ts
+!webpack.config.js
 
+dist
