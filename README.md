@@ -66,6 +66,14 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
     
 ```
 
+### Copy files
+
+``` javascript
+    //Copy all the files from my desktop to S3
+    fileService.copy({key:"/Users/djabry/Desktop"}, {bucket:"my-bucket", key:"my-files"}).then(function(writtenFiles){
+        console.log("Successfully written",writtenFiles.length,"files");
+    });
+```
     
 ## API
 
