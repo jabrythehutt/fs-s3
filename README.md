@@ -38,13 +38,13 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
 
 3. Create a new FileService object
 
-    ```javascript
-       //Create a new S3 object
-       var s3 = new AWS.S3({region:"eu-west-1"});
+ ```javascript
+   //Create a new S3 object
+   var s3 = new AWS.S3({region:"eu-west-1"});
        
-       //The file service takes the S3 object as the argument constructor
-       var fileService = new fss3.FileService(s3);
-    ```
+   //The file service takes the S3 object as the argument constructor
+   var fileService = new fss3.FileService(s3);
+ ```
     
 ## Examples
 
@@ -70,7 +70,8 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
 
 ``` javascript
     //Copy all the files from my desktop to S3
-    fileService.copy({key:"/Users/djabry/Desktop"}, {bucket:"my-bucket", key:"my-files"}).then(function(writtenFiles){
+    fileService.copy({key:"/Users/djabry/Desktop"}, {bucket:"my-bucket", key:"my-files"})
+    .then(function(writtenFiles){
         console.log("Successfully written",writtenFiles.length,"files");
     });
 ```
