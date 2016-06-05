@@ -20,14 +20,14 @@ If you like promises (not the Donald Trump variety, but the ES6y ones that tend 
 
         ES6 or TypeScript: 
          ```javascript
-         import * as fss3 from '@djabry/fs-s3';
+         import * as fss3 from '@djabry/fs-s3/fs-s3';
          ```
 
         or
 
         Standard:
          ```javascript
-         var fss3 = require("fs-s3");
+         var fss3 = require("@djabry/fs-s3");
          ```
 
     * Simple browser
