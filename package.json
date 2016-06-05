@@ -2,7 +2,7 @@
   "name": "@djabry/fs-s3",
   "version": "0.0.3",
   "description": "Yet another AWS S3 wrapper to simplify your life",
-  "main": "fs-s3.js",
+  "main": "index.js",
   "scripts": {
     "prepublish": "npm run test && npm run dist",
     "compile": "tsc",
