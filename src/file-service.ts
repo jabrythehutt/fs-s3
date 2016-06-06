@@ -198,11 +198,16 @@ export class FileService implements IFileService {
 
         } else {
 
-            return this.s3.waitFor('objectExists', {Bucket: file.bucket, Key: file.key}).promise().then(data => {
+            return this.s3Promise.then(s3 => {
 
-                return {bucket: file.bucket, key: file.key, md5: JSON.parse(data.ETag)};
+                return s3.waitFor('objectExists', {Bucket: file.bucket, Key: file.key}).promise().then(data => {
+
+                    return {bucket: file.bucket, key: file.key, md5: JSON.parse(data.ETag)};
+
+                });
 
             });
+
 
         }
     }
@@ -240,8 +245,6 @@ export class FileService implements IFileService {
 
         return new Promise((resolve, reject) => {
 
-
-
             var extraParams = options.s3Params || {};
 
             var s3Params = {
@@ -264,28 +267,31 @@ export class FileService implements IFileService {
             }
 
 
-            this.s3.upload(s3Params).send((err, data) => {
+            this.s3Promise.then(s3 => {
 
-                if (err) {
-                    console.log(err);
-                    reject(err);
+                s3.upload(s3Params).send((err, data) => {
 
-                } else {
-
-                    console.log(completeMessage);
-
-                    this.scanFile(destination).then(result => {
-
-                        resolve(result);
-
-                    }, err => {
-
+                    if (err) {
                         console.log(err);
                         reject(err);
-                    });
 
-                }
+                    } else {
 
+                        console.log(completeMessage);
+
+                        this.scanFile(destination).then(result => {
+
+                            resolve(result);
+
+                        }, err => {
+
+                            console.log(err);
+                            reject(err);
+                        });
+
+                    }
+
+                });
             });
         });
 
@@ -427,9 +433,24 @@ export class FileService implements IFileService {
         });
     }
 
+    private s3Promise:Promise<S3>;
 
 
-    constructor(private s3:S3) {
+    /**
+     *
+     * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
+     */
+    constructor(s3:S3 | Promise<S3>) {
+
+        if (typeof s3["then"] === "function") {
+
+            this.s3Promise = <Promise<S3>>s3;
+
+        } else {
+
+            this.s3Promise = Promise.resolve(s3);
+
+        }
 
     }
 
@@ -588,11 +609,14 @@ export class FileService implements IFileService {
         if (file.bucket) {
 
 
-            return this.s3.getObject({Bucket: file.bucket, Key: file.key}).promise().then(data => {
+            return this.s3Promise.then(s3 => {
 
-                return data.Body.toString();
+                return s3.getObject({Bucket: file.bucket, Key: file.key}).promise().then(data => {
 
-            });
+                    return data.Body.toString();
+
+                });
+            })
 
 
         } else {
@@ -614,42 +638,42 @@ export class FileService implements IFileService {
     listS3(bucket:string, prefix:string, suffix?:string, marker?:string):Promise<ScannedFile[]> {
 
         // console.log("Listing s3");
+        return this.s3Promise.then(s3 => {
+
+            return s3.listObjects({
+                Bucket: bucket,
+                MaxKeys: 1000000,
+                Prefix: prefix,
+                Delimiter: suffix,
+                Marker: marker
+            }).promise().then(data => {
 
 
-
-        return this.s3.listObjects({
-            Bucket: bucket,
-            MaxKeys: 1000000,
-            Prefix: prefix,
-            Delimiter: suffix,
-            Marker: marker
-        }).promise().then(data => {
-
-
-            //Add all the files to the items list
-            var items:AnyFile[] = data.Contents.map(item => {
-                return {bucket: bucket, key: item.Key, md5: JSON.parse(item.ETag)};
-            });
-
-
-            if (data.IsTruncated) {
-
-                marker = data.NextMarker || data.Contents[data.Contents.length - 1].Key;
-
-                return this.listS3(bucket, prefix, suffix, marker).then(resultItems => {
-
-                    items = items.concat(resultItems);
-                    return items;
-
+                //Add all the files to the items list
+                var items:AnyFile[] = data.Contents.map(item => {
+                    return {bucket: bucket, key: item.Key, md5: JSON.parse(item.ETag)};
                 });
 
 
-            } else {
+                if (data.IsTruncated) {
 
-                return items;
-            }
+                    marker = data.NextMarker || data.Contents[data.Contents.length - 1].Key;
+
+                    return this.listS3(bucket, prefix, suffix, marker).then(resultItems => {
+
+                        items = items.concat(resultItems);
+                        return items;
+
+                    });
+
+
+                } else {
+
+                    return items;
+                }
+            });
+
         });
-
 
 
     }
@@ -804,115 +828,123 @@ export class FileService implements IFileService {
 
         var completeMessage = "Copied " + this.toFileString(source) + " to " + this.toFileString(destination);
 
-        return new Promise((resolve, reject) => {
+        return this.s3Promise.then(s3 => {
 
-            var skip = this.doSkip(source, destination, destinationList, options);
-            options = options || {};
+            return new Promise((resolve, reject) => {
 
-            if (!skip) {
-                if (source.bucket && destination.bucket) {
-                    //Scenario 1: s3 to s3
+                var skip = this.doSkip(source, destination, destinationList, options);
+                options = options || {};
 
-                    options.s3Params = options.s3Params || {};
+                if (!skip) {
+                    if (source.bucket && destination.bucket) {
+                        //Scenario 1: s3 to s3
 
-                    var copyObjectRequest = {
-                        CopySource: source.bucket + "/" + source.key,
-                        Bucket: destination.bucket,
-                        Key: destination.key,
-                        ACL: options.makePublic ? "public-read" : null
-                    };
+                        options.s3Params = options.s3Params || {};
 
-                    Object.keys(options.s3Params).forEach(extraKey => {
-                        //console.log("Setting extra S3 params:", extraKey, "to", options.s3Params[extraKey]);
-                        copyObjectRequest[extraKey] = options.s3Params[extraKey];
-                    });
+                        var copyObjectRequest = {
+                            CopySource: source.bucket + "/" + source.key,
+                            Bucket: destination.bucket,
+                            Key: destination.key,
+                            ACL: options.makePublic ? "public-read" : null
+                        };
 
-                    if (Object.keys(options.s3Params).length) {
+                        Object.keys(options.s3Params).forEach(extraKey => {
+                            //console.log("Setting extra S3 params:", extraKey, "to", options.s3Params[extraKey]);
+                            copyObjectRequest[extraKey] = options.s3Params[extraKey];
+                        });
 
-                        //  console.log("Extra properties added to S3 request",copyObjectRequest);
+                        if (Object.keys(options.s3Params).length) {
+
+                            //  console.log("Extra properties added to S3 request",copyObjectRequest);
+                        }
+
+                        s3.copyObject(copyObjectRequest).promise().then(data => {
+                            console.log(completeMessage);
+                            resolve(destination);
+
+                        }, err => {
+
+                            reject(err);
+                        });
+
+                    } else if (source.bucket && !destination.bucket) {
+                        //Scenario 2: s3 to local
+
+                        this.ensureDirectoryExistence(destination.key);
+
+                        var file = fs.createWriteStream(destination.key);
+                        var readStream = s3.getObject({Key: source.key, Bucket: source.bucket})
+                            .createReadStream();
+
+                        file.on("error", (err) => {
+                            console.log(err);
+                            reject(err);
+                        });
+
+
+                        file.on("close", (ex) => {
+                            console.log(completeMessage);
+                            resolve(destination);
+                        });
+
+                        readStream.pipe(file);
+
+
+                    } else if (!source.bucket && destination.bucket) {
+                        //Scenario 3: local to s3
+
+                        var body = fs.createReadStream(source.key);
+
+                        this.doWriteToS3(body, destination, options).then((dest) => {
+
+                            resolve(dest);
+                        }, err => {
+
+                            console.log(err);
+                            reject(err);
+                        });
+
+                    } else if (!source.bucket && !destination.bucket) {
+
+                        //Scenario 4: local to local
+
+                        this.ensureDirectoryExistence(destination.key);
+
+                        var rd = fs.createReadStream(source.key);
+                        rd.on("error", (err) => {
+                            console.log(err);
+                            reject(err);
+                        });
+                        var wr = fs.createWriteStream(destination.key);
+
+                        wr.on("error", (err) => {
+                            console.log(err);
+                            reject(err);
+                        });
+                        wr.on("close", (ex) => {
+                            console.log(completeMessage);
+                            resolve(destination);
+                        });
+
+                        rd.pipe(wr);
+
                     }
 
-                    this.s3.copyObject(copyObjectRequest).promise().then(data => {
-                        console.log(completeMessage);
-                        resolve(destination);
 
-                    }, err => {
+                } else {
 
-                        reject(err);
-                    });
-
-                } else if (source.bucket && !destination.bucket) {
-                    //Scenario 2: s3 to local
-
-                    this.ensureDirectoryExistence(destination.key);
-
-                    var file = fs.createWriteStream(destination.key);
-                    var readStream = this.s3.getObject({Key: source.key, Bucket: source.bucket})
-                        .createReadStream();
-
-                    file.on("error", (err) => {
-                        console.log(err);
-                        reject(err);
-                    });
-
-
-                    file.on("close", (ex) => {
-                        console.log(completeMessage);
-                        resolve(destination);
-                    });
-
-                    readStream.pipe(file);
-
-
-                } else if (!source.bucket && destination.bucket) {
-                    //Scenario 3: local to s3
-
-                    var body = fs.createReadStream(source.key);
-
-                    this.doWriteToS3(body, destination, options).then((dest) => {
-
-                        resolve(dest);
-                    }, err => {
-
-                        console.log(err);
-                        reject(err);
-                    });
-
-                } else if (!source.bucket && !destination.bucket) {
-
-                    //Scenario 4: local to local
-
-                    this.ensureDirectoryExistence(destination.key);
-
-                    var rd = fs.createReadStream(source.key);
-                    rd.on("error", (err) => {
-                        console.log(err);
-                        reject(err);
-                    });
-                    var wr = fs.createWriteStream(destination.key);
-
-                    wr.on("error", (err) => {
-                        console.log(err);
-                        reject(err);
-                    });
-                    wr.on("close", (ex) => {
-                        console.log(completeMessage);
-                        resolve(destination);
-                    });
-
-                    rd.pipe(wr);
-
+                    console.log("Skipping existing file: ", this.toFileString(destination));
+                    resolve(destination);
                 }
 
 
-            } else {
+            });
 
-                console.log("Skipping existing file: ", this.toFileString(destination));
-                resolve(destination);
-            }
+
 
 
         });
+
 
     }
 
@@ -941,10 +973,13 @@ export class FileService implements IFileService {
         if (file.bucket) {
             //Delete S3
 
-            return this.s3.deleteObject({Bucket: file.bucket, Key: file.key}).promise().then(data => {
+            return this.s3Promise.then(s3 => {
+                return s3.deleteObject({Bucket: file.bucket, Key: file.key}).promise().then(data => {
 
-                console.log(completeMessage);
-                return file;
+                    console.log(completeMessage);
+                    return file;
+
+                });
 
             });
 
