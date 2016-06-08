@@ -18,6 +18,7 @@ export interface AnyFile {
 
 export interface ScannedFile extends AnyFile {
     md5:string; //The md5 hash of the file content
+    size:number; //The size of the file in bytes
 }
 
 export interface WriteOptions {
@@ -202,7 +203,7 @@ export class FileService implements IFileService {
 
                 return s3.waitFor('objectExists', {Bucket: file.bucket, Key: file.key}).promise().then(data => {
 
-                    return {bucket: file.bucket, key: file.key, md5: JSON.parse(data.ETag)};
+                    return {bucket: file.bucket, key: file.key, md5: JSON.parse(data.ETag), size: data.Size};
 
                 });
 
@@ -580,7 +581,12 @@ export class FileService implements IFileService {
 
 
                 return this.calculateLocalMD5(file.key).then(md5 => {
-                    return <ScannedFile>{key: file.key, md5: md5};
+
+                    return this.calculateLocalFileSize(file.key).then(fileSize => {
+
+                        return <ScannedFile>{key: file.key, md5: md5, size: fileSize};
+                    });
+
                 });
             }
 
@@ -597,6 +603,15 @@ export class FileService implements IFileService {
 
         return this.calculateStreamMD5(stream);
 
+    }
+
+    calculateLocalFileSize(localPath:string):Promise<number> {
+
+        localPath = path.resolve(localPath);
+
+        return this.promisify(fs.stat, localPath).then(stat => {
+            return stat.size;
+        });
     }
 
     /**
@@ -651,7 +666,7 @@ export class FileService implements IFileService {
 
                 //Add all the files to the items list
                 var items:AnyFile[] = data.Contents.map(item => {
-                    return {bucket: bucket, key: item.Key, md5: JSON.parse(item.ETag)};
+                    return {bucket: bucket, key: item.Key, md5: JSON.parse(item.ETag), size: item.Size};
                 });
 
 
@@ -682,10 +697,11 @@ export class FileService implements IFileService {
     scanLocalFile(filePath:string):Promise<ScannedFile> {
 
 
-        return this.promisify(fs.stat, filePath).then(stat=> {
+        return this.calculateLocalFileSize(filePath).then(fileSize=> {
 
             return this.calculateLocalMD5(filePath).then(md5 => {
-                return {key: filePath, md5: md5};
+
+                return {key: filePath, md5: md5, size: fileSize};
             });
 
         });
@@ -774,7 +790,7 @@ export class FileService implements IFileService {
 
     /**
      * Recursively list all the files in the dir
-     * @param dir
+     * @param file {AnyFile}
      */
     list(file:AnyFile):Promise<ScannedFile[]> {
         //console.log("Listing files", JSON.stringify(file));
@@ -1050,7 +1066,8 @@ export class FileService implements IFileService {
                     var destinationFile:ScannedFile = {
                         bucket: destination.bucket,
                         key: inputFile.key.replace(source.key, destination.key),
-                        md5: inputFile.md5
+                        md5: inputFile.md5,
+                        size: inputFile.size
                     };
 
                     destinationFile = this.fixFile(destinationFile);
