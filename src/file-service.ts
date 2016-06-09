@@ -837,28 +837,28 @@ export class FileService implements IFileService {
     }
 
 
-    doCopyFile(source:ScannedFile, destination:AnyFile, destinationList:ScannedFile[], options:WriteOptions):Promise<AnyFile> {
+    doCopyFile(sourceFile:ScannedFile, destination:AnyFile, destinationList:ScannedFile[], options:WriteOptions):Promise<AnyFile> {
 
         //console.log("Copying: ", source.bucket + "/" + source.key, "to", destination.bucket + "/" + destination.key);
         destination = this.fixFile(destination);
 
-        var completeMessage = "Copied " + this.toFileString(source) + " to " + this.toFileString(destination);
+        var completeMessage = "Copied " + this.toFileString(sourceFile) + " to " + this.toFileString(destination);
 
         return this.s3Promise.then(s3 => {
 
             return new Promise((resolve, reject) => {
 
-                var skip = this.doSkip(source, destination, destinationList, options);
+                var skip = this.doSkip(sourceFile, destination, destinationList, options);
                 options = options || {};
 
                 if (!skip) {
-                    if (source.bucket && destination.bucket) {
+                    if (sourceFile.bucket && destination.bucket) {
                         //Scenario 1: s3 to s3
 
                         options.s3Params = options.s3Params || {};
 
                         var copyObjectRequest = {
-                            CopySource: source.bucket + "/" + source.key,
+                            CopySource: sourceFile.bucket + "/" + sourceFile.key,
                             Bucket: destination.bucket,
                             Key: destination.key,
                             ACL: options.makePublic ? "public-read" : null
@@ -883,13 +883,13 @@ export class FileService implements IFileService {
                             reject(err);
                         });
 
-                    } else if (source.bucket && !destination.bucket) {
+                    } else if (sourceFile.bucket && !destination.bucket) {
                         //Scenario 2: s3 to local
 
                         this.ensureDirectoryExistence(destination.key);
 
                         var file = fs.createWriteStream(destination.key);
-                        var readStream = s3.getObject({Key: source.key, Bucket: source.bucket})
+                        var readStream = s3.getObject({Key: sourceFile.key, Bucket: sourceFile.bucket})
                             .createReadStream();
 
                         file.on("error", (err) => {
@@ -906,10 +906,10 @@ export class FileService implements IFileService {
                         readStream.pipe(file);
 
 
-                    } else if (!source.bucket && destination.bucket) {
+                    } else if (!sourceFile.bucket && destination.bucket) {
                         //Scenario 3: local to s3
 
-                        var body = fs.createReadStream(source.key);
+                        var body = fs.createReadStream(sourceFile.key);
 
                         this.doWriteToS3(body, destination, options).then((dest) => {
 
@@ -920,13 +920,13 @@ export class FileService implements IFileService {
                             reject(err);
                         });
 
-                    } else if (!source.bucket && !destination.bucket) {
+                    } else if (!sourceFile.bucket && !destination.bucket) {
 
                         //Scenario 4: local to local
 
                         this.ensureDirectoryExistence(destination.key);
 
-                        var rd = fs.createReadStream(source.key);
+                        var rd = fs.createReadStream(sourceFile.key);
                         rd.on("error", (err) => {
                             console.log(err);
                             reject(err);
@@ -1060,17 +1060,20 @@ export class FileService implements IFileService {
             destination.key = path.resolve(destination.key);
         }
 
+
         //Recursively list all the source files
         return this.list(source).then(sourceFiles => {
 
             return this.findDestinationFiles(options, destination).then(destinationFiles => {
 
+                var sourceFolderPath = source.key;
+                var destinationFolderPath = destination.key;
 
                 var processor = (inputFile:ScannedFile) => {
 
                     var destinationFile:ScannedFile = {
                         bucket: destination.bucket,
-                        key: inputFile.key.replace(source.key, destination.key),
+                        key: inputFile.key.replace(sourceFolderPath, destinationFolderPath),
                         md5: inputFile.md5,
                         size: inputFile.size
                     };
