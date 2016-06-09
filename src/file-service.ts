@@ -1051,8 +1051,13 @@ export class FileService implements IFileService {
 
         options = options || {makePublic: false, parallel: false, overwrite: false, skipSame: true};
 
+        //Fix file paths if they are local
         if (!source.bucket) {
             source.key = path.resolve(source.key);
+        }
+
+        if (!destination.bucket) {
+            destination.key = path.resolve(destination.key);
         }
 
         //Recursively list all the source files
