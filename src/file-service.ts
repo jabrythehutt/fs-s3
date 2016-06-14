@@ -62,6 +62,12 @@ export interface IFileService {
     list(dir:AnyFile):Promise<ScannedFile[]>
 
     /**
+     * Retrieve a link for getting a file
+     * @param file {ScannedFile} - The file to get the link for
+     */
+    getReadURL(file:ScannedFile):Promise<string>;
+
+    /**
      * Delete all files in the folder
      * @param file {AnyFile} - The file or directory to delete
      * @param parallel {boolean} - Whether to delete files in parallel
@@ -109,6 +115,27 @@ export interface IFileService {
 }
 
 export class FileService implements IFileService {
+
+
+    getReadURL(file:ScannedFile):Promise<string> {
+
+        if (file.bucket) {
+
+            return this.s3Promise.then(s3 => {
+
+                var url = s3.getSignedUrl('getObject', {Bucket: file.key, key: file.key});
+                return url;
+
+            });
+        } else {
+
+            return new Promise((resolve, reject) => {
+                reject("Operation not supported for local files");
+            });
+        }
+
+
+    }
 
     /**
      * Execute promises in series or parallel
