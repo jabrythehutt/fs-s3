@@ -19,6 +19,7 @@ export interface AnyFile {
 export interface ScannedFile extends AnyFile {
     md5:string; //The md5 hash of the file content
     size:number; //The size of the file in bytes
+    mimeType:string; //The mime type of the file
 }
 
 export interface WriteOptions {
@@ -230,7 +231,13 @@ export class FileService implements IFileService {
 
                 return s3.waitFor('objectExists', {Bucket: file.bucket, Key: file.key}).promise().then(data => {
 
-                    return {bucket: file.bucket, key: file.key, md5: JSON.parse(data.ETag), size: data.Size};
+                    return {
+                        bucket: file.bucket,
+                        key: file.key,
+                        md5: JSON.parse(data.ETag),
+                        size: data.Size,
+                        mimeType: mime.lookup(file.key)
+                    };
 
                 });
 
@@ -586,7 +593,7 @@ export class FileService implements IFileService {
 
     scanFile(file:AnyFile):Promise<ScannedFile> {
 
-        if (file["md5"]) {
+        if (file["md5"] && file["size"] && file["mimeType"]) {
 
             return new Promise((resolve, reject) => {
                 var scannedFile = <ScannedFile>file;
@@ -611,7 +618,12 @@ export class FileService implements IFileService {
 
                     return this.calculateLocalFileSize(file.key).then(fileSize => {
 
-                        return <ScannedFile>{key: file.key, md5: md5, size: fileSize};
+                        return <ScannedFile>{
+                            key: file.key,
+                            md5: md5,
+                            size: fileSize,
+                            mimeType: mime.lookup(file.key)
+                        };
                     });
 
                 });
@@ -693,7 +705,13 @@ export class FileService implements IFileService {
 
                 //Add all the files to the items list
                 var items:AnyFile[] = data.Contents.map(item => {
-                    return {bucket: bucket, key: item.Key, md5: JSON.parse(item.ETag), size: item.Size};
+                    return {
+                        bucket: bucket,
+                        key: item.Key,
+                        md5: JSON.parse(item.ETag),
+                        size: item.Size,
+                        mimeType: mime.lookup(item.Key)
+                    };
                 });
 
 
@@ -728,7 +746,12 @@ export class FileService implements IFileService {
 
             return this.calculateLocalMD5(filePath).then(md5 => {
 
-                return {key: filePath, md5: md5, size: fileSize};
+                return {
+                    key: filePath,
+                    md5: md5,
+                    size: fileSize,
+                    mimeType: mime.lookup(filePath)
+                };
             });
 
         });
@@ -1098,11 +1121,13 @@ export class FileService implements IFileService {
 
                 var processor = (inputFile:ScannedFile) => {
 
+                    var destinationKey = inputFile.key.replace(sourceFolderPath, destinationFolderPath);
                     var destinationFile:ScannedFile = {
                         bucket: destination.bucket,
-                        key: inputFile.key.replace(sourceFolderPath, destinationFolderPath),
+                        key: destinationKey,
                         md5: inputFile.md5,
-                        size: inputFile.size
+                        size: inputFile.size,
+                        mimeType: mime.lookup(destinationKey)
                     };
 
                     destinationFile = this.fixFile(destinationFile);

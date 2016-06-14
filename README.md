@@ -99,6 +99,7 @@ This is emitted when a file is scanned. It contains the same fields as an AnyFil
 export interface ScannedFile extends AnyFile {
     md5:string; //The md5 hash of the file content
     size:number; //The size of the file in bytes
+    mimeType:string; //The mime type of the file
 }
 ```
 
@@ -151,6 +152,12 @@ export interface IFileService {
      * @param dir {AnyFile} - The file or directory to scan
      */
     list(dir:AnyFile):Promise<ScannedFile[]>
+
+    /**
+     * Retrieve a link for getting a file
+     * @param file {ScannedFile} - The file to get the link for
+     */
+    getReadURL(file:ScannedFile):Promise<string>;
 
     /**
      * Delete all files in the folder
