@@ -128,7 +128,7 @@ export class FileService implements IFileService {
                     //Create a link that lasts for 24h
                     var expires = 60 * 60 * 24;
 
-                    s3.getSignedUrl('getObject', {Bucket: file.key, Key: file.key, Expires: expires}, (err, url) => {
+                    s3.getSignedUrl('getObject', {Bucket: file.bucket, Key: file.key, Expires: expires}, (err, url) => {
 
 
                         if (err) {
