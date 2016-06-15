@@ -157,13 +157,21 @@ export class FileService implements IFileService {
 
                 return s3.waitFor('objectExists', {Bucket: file.bucket, Key: file.key}).promise().then(data => {
 
-                    return {
+                    /*return {
                         bucket: file.bucket,
                         key: file.key,
                         md5: JSON.parse(data.ETag),
                         size: data.Size,
                         mimeType: mime.lookup(file.key)
-                    };
+                     };*/
+
+
+                    //Strange behaviour when file already exists leading to no ETag or size being present in result,
+                    //List object instead
+
+                    return this.isFile(file);
+
+
 
                 });
 
