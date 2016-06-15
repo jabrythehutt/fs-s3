@@ -124,8 +124,26 @@ export class FileService implements IFileService {
 
             return this.s3Promise.then(s3 => {
 
-                var url = s3.getSignedUrl('getObject', {Bucket: file.key, Key: file.key});
-                return url;
+                return new Promise((resolve, reject) => {
+                    //Create a link that lasts for 24h
+                    var expires = 60 * 60 * 24;
+
+                    s3.getSignedUrl('getObject', {Bucket: file.key, Key: file.key, Expires: expires}, (err, url) => {
+
+
+                        if (err) {
+
+                            reject(err);
+                        } else {
+
+                            resolve(url);
+
+                        }
+
+                    });
+
+                });
+
 
             });
         } else {
