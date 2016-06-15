@@ -40,6 +40,7 @@ function deleteAllTestFiles () {
 
 }
 
+
 describe("Test File Service", function () {
 
 
@@ -56,6 +57,22 @@ describe("Test File Service", function () {
 
         });
 
+    });
+
+    it("Should get a link for a remote file", function (done) {
+        fileService.write(testFileText,
+            {bucket: testBucket, key: s3Destination},
+            {overwrite: true, skipSame: false}).then((resultFile) => {
+
+            fileService.getReadURL(resultFile).then(link => {
+
+                assert(link, "No link returned for file");
+
+                done();
+            });
+
+
+        });
     });
 
     it("Should write a local file", function(done){

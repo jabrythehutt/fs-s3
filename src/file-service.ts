@@ -124,7 +124,7 @@ export class FileService implements IFileService {
 
             return this.s3Promise.then(s3 => {
 
-                var url = s3.getSignedUrl('getObject', {Bucket: file.key, key: file.key});
+                var url = s3.getSignedUrl('getObject', {Bucket: file.key, Key: file.key});
                 return url;
 
             });
