@@ -173,7 +173,10 @@
 
             if (fileService) {
 
-                fileService.uploadFiles(files, {bucket: bucket, key: ""}).then(function (filesUploaded) {
+                fileService.uploadFiles({
+                    inputList: files,
+                    destinationFolder: {bucket: bucket, key: ""}
+                }).then(function (filesUploaded) {
 
                     console.log("Uploaded ", filesUploaded.length, " files");
                     listFiles();

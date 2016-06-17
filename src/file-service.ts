@@ -295,6 +295,7 @@ export class FileService implements IFileService {
      * @param file
      * @param destination
      * @param writeOptions
+     * @param destinationFiles
      */
     uploadFile(file:File, destination:AnyFile, writeOptions?:WriteOptions, destinationFiles?:ScannedFile[]):Promise<ScannedFile> {
 
@@ -320,11 +321,14 @@ export class FileService implements IFileService {
 
     /**
      * Upload files in the browser
-     * @param files
+     * @param inputList
      * @param destinationFolder
-     * @param writeOptions
+     * @param opt
      */
-    uploadFiles(inputList:FileList, destinationFolder:AnyFile, options?:WriteOptions):Promise<ScannedFile[]> {
+    uploadFiles(parameters):Promise<ScannedFile[]> {
+        let inputList = parameters.inputList;
+        let destinationFolder = parameters.destinationFolder;
+        let options = parameters.options;
 
         options = options || {makePublic: false, parallel: false, overwrite: false, skipSame: true};
 
