@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "prepublish": "npm run test && npm run dist",
-    "compile": "tsc",
+    "compile": "ntsc",
     "dist": "webpack",
     "test": "npm run compile && mocha",
     "deploy": "npm version patch && npm publish --access public"
@@ -25,15 +25,18 @@
   },
   "homepage": "https://github.com/djabry/fs-s3#readme",
   "devDependencies": {
-    "aws-sdk": "^2.3.17",
+    "@djabry/aws-sdk-typescript": "0.0.6",
+    "@types/mime": "0.0.28",
+    "@types/mocha": "^2.2.31",
+    "@types/node": "^6.0.38",
+    "aws-sdk": "^2.5.3",
     "compression-webpack-plugin": "^0.3.1",
     "core-js": "^2.4.0",
     "json-loader": "^0.5.4",
     "mocha": "^2.5.3",
+    "ntypescript": "^1.201608290012.1",
     "ts-loader": "^0.8.2",
-    "tsc": "^1.20150623.0",
-    "typescript": "^1.8.10",
-    "typings": "^1.0.4",
+    "typescript": "^2.0.0",
     "webpack": "^1.13.1"
   },
   "dependencies": {

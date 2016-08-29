@@ -4,13 +4,20 @@
     "target": "es5",
     "sourceMap": true,
     "removeComments": false,
-    "declaration": true
+    "declaration": true,
+    "lib": [
+      "es6",
+      "dom"
+    ],
+    "baseUrl": "./src",
+    "types": [
+      "mocha",
+      "node",
+      "mime",
+      "@djabry/aws-sdk-typescript/index"
+    ]
   },
   "exclude": [
     "node_modules"
-  ],
-  "filesGlob": [
-    "custom-typings.d.ts",
-    "typings/index.d.ts"
   ]
 }
