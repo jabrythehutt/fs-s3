@@ -11,7 +11,7 @@ const UglifyJsPlugin = require('webpack/lib/optimize/UglifyJsPlugin');
 const CompressionPlugin = require('compression-webpack-plugin');
 const DedupePlugin = require('webpack/lib/optimize/DedupePlugin');
 
-process.env.AWS_SERVICES = 's3,kms,lambda,cognitoidentity,cognitosync,mobileanalytics,elastictranscoder'; // optional
+process.env.AWS_SERVICES = 's3'; // optional
 
 module.exports = {
 
