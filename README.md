@@ -1,6 +1,6 @@
 #Yet another S3 wrapper
 
-I often find myself reinventing the wheel when using the AWS SDK for S3 broswer and node-based operations. 
+I often find myself reinventing the wheel when using the AWS SDK for S3 browser and node-based operations.
 
 Copying and deleting multiple files just requires too much boilerplate code and existing efforts (such as [node-s3-client](https://github.com/andrewrk/node-s3-client)) have either been abandoned, do not support promises or only work for Node.
 
