@@ -30,6 +30,12 @@ module.exports = {
         extensions: ['', '.webpack.js', '.web.js', '.ts', '.js', '.json']
     },
 
+    externals: {
+        // require("jquery") is external and available
+        //  on the global var jQuery
+        "aws-sdk": "AWS"
+    },
+
     module: {
         // noParse: [/cssnano/],
         preloaders: [

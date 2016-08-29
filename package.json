@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "prepublish": "npm run test && npm run dist",
-    "compile": "ntsc",
+    "compile": "ntsc && npm run dist",
     "dist": "webpack",
     "test": "npm run compile && mocha",
-    "deploy": "npm version patch && npm publish --access public"
+    "deploy": "npm run test && npm version patch && npm publish --access public"
   },
   "repository": {
     "type": "git",
