@@ -1,6 +1,6 @@
 {
   "name": "@djabry/fs-s3",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "description": "Yet another AWS S3 wrapper to simplify your life",
   "main": "index.js",
   "scripts": {
