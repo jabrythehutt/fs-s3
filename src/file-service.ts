@@ -1133,6 +1133,10 @@ export class FileService implements IFileService {
 
                                     this.scanFile(file).then(scannedFile => {
                                         resolve(scannedFile);
+
+                                    }, err => {
+
+                                        reject(err);
                                     });
 
                                 }
