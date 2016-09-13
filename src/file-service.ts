@@ -395,9 +395,12 @@ export class FileService implements IFileService {
 
         return this.list(file).then(files => {
 
-            if (files.length === 1) {
+            if (files.length) {
 
-                return files[0];
+                return files.find(f => {
+
+                    return f.key === file.key;
+                });
 
             } else {
 
