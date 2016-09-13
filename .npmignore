@@ -91,3 +91,5 @@ test/**
 
 
 !*.d.ts
+
+dist/Users
