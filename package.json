@@ -25,11 +25,10 @@
   },
   "homepage": "https://github.com/djabry/fs-s3#readme",
   "devDependencies": {
-    "@djabry/aws-sdk-typescript": "0.0.6",
     "@types/mime": "0.0.28",
     "@types/mocha": "^2.2.31",
     "@types/node": "^6.0.38",
-    "aws-sdk": "^2.5.3",
+    "aws-sdk": "^2.7.7",
     "compression-webpack-plugin": "^0.3.1",
     "core-js": "^2.4.0",
     "json-loader": "^0.5.4",

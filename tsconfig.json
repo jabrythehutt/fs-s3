@@ -9,15 +9,12 @@
       "es6",
       "dom"
     ],
-    "baseUrl": "./src",
     "types": [
-      "mocha",
-      "node",
-      "mime",
-      "@djabry/aws-sdk-typescript/index"
+      "mocha"
     ]
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist"
   ]
 }

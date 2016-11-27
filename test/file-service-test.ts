@@ -9,20 +9,20 @@ import {FileService} from "../src/file-service";
 import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
-var testConfig = require("./test-config.json");
+const testConfig = require("./test-config.json");
 
-var s3Params = testConfig.s3;
+const s3Params = testConfig.s3;
 
 const s3 = new S3(s3Params);
-var fileService = new FileService(s3);
+const fileService = new FileService(s3);
 
-var testBucket = testConfig.s3.params.Bucket;
+const testBucket = testConfig.s3.params.Bucket;
 
 
-var testFilePath = "test/test-file.txt";
-var s3Destination = "test/"+(new Date()).getTime() +".txt";
-var testFileText = "This is a test file";
-var testFileMD5 = "0b26e313ed4a7ca6904b0e9369e5b957";
+const testFilePath = "test/test-file.txt";
+const s3Destination = "test/" + (new Date()).getTime() + ".txt";
+const testFileText = "This is a test file";
+const testFileMD5 = "0b26e313ed4a7ca6904b0e9369e5b957";
 
 function deleteAllTestFiles () {
 

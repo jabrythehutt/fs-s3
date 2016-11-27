@@ -32,7 +32,7 @@ export class FileService implements IFileService {
 
             return this.s3Promise.then(s3 => {
 
-                return new Promise((resolve, reject) => {
+                return new Promise<string>((resolve, reject) => {
                     //Create a link that lasts for 24h
                     const expires = 60 * 60 * 24;
 
@@ -56,9 +56,8 @@ export class FileService implements IFileService {
             });
         } else {
 
-            return new Promise((resolve, reject) => {
-                reject("Operation not supported for local files");
-            });
+            return Promise.reject<string>("Operation not supported for local files");
+
         }
 
 
@@ -409,7 +408,7 @@ export class FileService implements IFileService {
         });
     }
 
-    private s3Promise:Promise<S3>;
+    private s3Promise: Promise<S3>;
 
 
     /**
@@ -837,7 +836,7 @@ export class FileService implements IFileService {
 
         return this.s3Promise.then(s3 => {
 
-            return new Promise((resolve, reject) => {
+            return new Promise<AnyFile>((resolve, reject) => {
 
                 let skip = this.doSkip(sourceFile, destination, destinationList, options);
                 options = options || {};
