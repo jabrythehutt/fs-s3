@@ -471,7 +471,7 @@ export class FileService implements IFileService {
 
             let complete = currentIndex >= file.size - 1;
 
-            if (complete) {
+            if (!complete) {
 
                 let blob = file.slice(currentIndex, Math.min(currentIndex + delta, file.size - 1));
 
@@ -486,11 +486,8 @@ export class FileService implements IFileService {
 
             } else {
 
-                return new Promise((resolve, reject) => {
+                return Promise.resolve<string>(hash.digest('hex'));
 
-                    resolve(hash.digest('hex'));
-
-                });
             }
 
 

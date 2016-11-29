@@ -80,7 +80,7 @@ describe("Test File Service", function () {
         fileService.write(testFileText,{key: testFilePath},{overwrite:true, skipSame:false}).then(() => {
 
             //Read the local file to see if it's actually been written
-            var fileText  = fs.readFileSync(path.resolve(testFilePath)).toString();
+            let fileText = fs.readFileSync(path.resolve(testFilePath)).toString();
 
             assert(fileText === testFileText, "Wrong text found in file");
 
