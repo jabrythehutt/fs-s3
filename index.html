@@ -3,6 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>Standalone fs-s3 example</title>
+    <style>
+        .btn-file {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-file input[type=file] {
+            position: absolute;
+            top: 0;
+            right: 0;
+            min-width: 100%;
+            min-height: 100%;
+            font-size: 100px;
+            text-align: right;
+            filter: alpha(opacity=0);
+            opacity: 0;
+            outline: none;
+            background: white;
+            cursor: inherit;
+            display: block;
+        }
+    </style>
 </head>
 <body>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
@@ -10,28 +32,7 @@
 <script src="https://sdk.amazonaws.com/js/aws-sdk-2.5.3.min.js"></script>
 <script src="dist/fs-s3-standalone.min.js"></script>
 
-<style>
-    .btn-file {
-        position: relative;
-        overflow: hidden;
-    }
 
-    .btn-file input[type=file] {
-        position: absolute;
-        top: 0;
-        right: 0;
-        min-width: 100%;
-        min-height: 100%;
-        font-size: 100px;
-        text-align: right;
-        filter: alpha(opacity=0);
-        opacity: 0;
-        outline: none;
-        background: white;
-        cursor: inherit;
-        display: block;
-    }
-</style>
 <div class="jumbotron">
     <div class="container">
         <form>

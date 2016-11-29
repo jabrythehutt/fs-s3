@@ -473,12 +473,16 @@ export class FileService implements IFileService {
 
             if (!complete) {
 
-                let blob = file.slice(currentIndex, Math.min(currentIndex + delta, file.size - 1));
+
+                let nextIndex = Math.min(currentIndex + delta, file.size - 1);
+
+
+                let blob = file.slice(currentIndex, nextIndex);
 
                 return this.readBlob(blob).then((sectionString) => {
 
                     hash.update(sectionString);
-                    currentIndex += delta + 1;
+                    currentIndex += nextIndex + 1;
 
                     return processPart()
 
