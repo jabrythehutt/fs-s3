@@ -499,12 +499,12 @@ export class FileService implements IFileService {
 
         let processPart = () => {
 
-            let complete = currentIndex >= file.size - 1;
+            let complete = currentIndex >= file.size;
 
             if (!complete) {
 
 
-                let nextIndex = Math.min(currentIndex + delta, file.size - 1);
+                let nextIndex = Math.min(currentIndex + delta, file.size);
 
 
                 let blob = file.slice(currentIndex, nextIndex);
@@ -512,7 +512,7 @@ export class FileService implements IFileService {
                 return this.readBlob(blob).then((sectionString) => {
 
                     hash.update(sectionString);
-                    currentIndex = nextIndex + 1;
+                    currentIndex = nextIndex;
 
                     return processPart()
 
