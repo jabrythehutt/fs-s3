@@ -2,12 +2,17 @@ import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
 import {ScannedFile} from "./scanned-file";
 import * as fs from "fs";
+import {LineReader} from "./line-reader";
 
 
 /**
  * Created by djabry on 15/06/2016.
  */
 export interface IFileService {
+
+
+    //readLines(file: AnyFile, startByte?: number, endByte?: number): Promise<LineReader>;
+
 
     /**
      * Read the contents of a file into a string

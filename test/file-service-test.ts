@@ -114,6 +114,41 @@ describe("Test File Service", function () {
     });
 
 
+    /* it("Should read lines from a file", function(done) {
+
+
+     let words = ["Test file", "to ","write"];
+
+     let destination = {bucket: testBucket, key: s3Destination};
+
+     fileService.write(words.join("\n"),destination,{overwrite:true, skipSame:false}).then(fileWritten => {
+
+
+     fileService.readLines(destination).then(lineReader =>{
+
+     //Check that the lines are the same as the words written
+
+     words.forEach(word => {
+
+     let line = lineReader.nextLine();
+     assert(line === word);
+
+     });
+
+     done();
+
+     });
+
+
+
+
+     });
+
+
+
+     });*/
+
+
 
     after(function(done){
 

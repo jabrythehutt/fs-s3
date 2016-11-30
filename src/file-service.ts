@@ -10,6 +10,8 @@ import {IFileService} from "./ifile-service";
 import {ScannedFile} from "./scanned-file";
 import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
+import {LineReader} from "./line-reader";
+import {S3LineReader} from "./s3-line-reader";
 
 /**
  * Created by djabry on 17/05/2016.
@@ -24,6 +26,34 @@ import {WriteOptions} from "./write-options";
 
 
 export class FileService implements IFileService {
+
+    /*readLines(file: AnyFile, startByte?: number, endByte?: number): Promise<LineReader> {
+
+     if(file.bucket) {
+
+
+     return this.s3Promise.then(s3 => {
+
+     let rangeString = null;
+
+     if(startByte || endByte) {
+
+     rangeString = "bytes="+(startByte || "")+"-"+(endByte || "");
+     }
+
+     return s3.getObject({Bucket: file.bucket, Key: file.key, Range: rangeString}).promise().then(result => {
+
+     return new S3LineReader(result);
+     });
+     });
+
+     } else {
+
+     //Not supported yet
+     return null;
+     }
+
+     }*/
 
 
     getReadURL(file:ScannedFile):Promise<string> {
@@ -482,7 +512,7 @@ export class FileService implements IFileService {
                 return this.readBlob(blob).then((sectionString) => {
 
                     hash.update(sectionString);
-                    currentIndex += nextIndex + 1;
+                    currentIndex = nextIndex + 1;
 
                     return processPart()
 
