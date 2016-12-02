@@ -186,11 +186,11 @@ export class FileService implements IFileService {
                 return s3.waitFor('objectExists', {Bucket: file.bucket, Key: file.key}).promise().then(data => {
 
                     /*return {
-                        bucket: file.bucket,
-                        key: file.key,
-                        md5: JSON.parse(data.ETag),
-                        size: data.Size,
-                        mimeType: mime.lookup(file.key)
+                     bucket: file.bucket,
+                     key: file.key,
+                     md5: JSON.parse(data.ETag),
+                     size: data.Size,
+                     mimeType: mime.lookup(file.key)
                      };*/
 
 
@@ -240,28 +240,26 @@ export class FileService implements IFileService {
         let completeMessage = "Completed upload to " + this.toFileString(destination);
 
 
+        let extraParams = options.s3Params || {};
 
+        let s3Params = {
+            //Replace any backslashes introduced by Windows local files
+            Key: destination.key,
+            Bucket: destination.bucket,
+            Body: body,
+            ContentType: mime.lookup(destination.key) || 'application/octet-stream',
+            ACL: options.makePublic ? "public-read" : null
+        };
 
-            let extraParams = options.s3Params || {};
+        Object.keys(extraParams).forEach(extraKey => {
+            //console.log("Setting extra S3 params:", extraKey, "to", extraParams[extraKey]);
+            s3Params[extraKey] = extraParams[extraKey];
+        });
 
-            let s3Params = {
-                //Replace any backslashes introduced by Windows local files
-                Key: destination.key,
-                Bucket: destination.bucket,
-                Body: body,
-                ContentType: mime.lookup(destination.key) || 'application/octet-stream',
-                ACL: options.makePublic ? "public-read" : null
-            };
+        if (Object.keys(extraParams).length) {
 
-            Object.keys(extraParams).forEach(extraKey => {
-                //console.log("Setting extra S3 params:", extraKey, "to", extraParams[extraKey]);
-                s3Params[extraKey] = extraParams[extraKey];
-            });
-
-            if (Object.keys(extraParams).length) {
-
-                //console.log("Added extra s3 params to request: ", s3Params);
-            }
+            //console.log("Added extra s3 params to request: ", s3Params);
+        }
 
 
         return this.s3Promise.then(s3 => {
