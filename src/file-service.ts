@@ -10,8 +10,7 @@ import {IFileService} from "./ifile-service";
 import {ScannedFile} from "./scanned-file";
 import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
-import {LineReader} from "./line-reader";
-import {S3LineReader} from "./s3-line-reader";
+
 
 /**
  * Created by djabry on 17/05/2016.
@@ -241,7 +240,7 @@ export class FileService implements IFileService {
         let completeMessage = "Completed upload to " + this.toFileString(destination);
 
 
-        return new Promise((resolve, reject) => {
+
 
             let extraParams = options.s3Params || {};
 
@@ -265,34 +264,30 @@ export class FileService implements IFileService {
             }
 
 
-            this.s3Promise.then(s3 => {
+        return this.s3Promise.then(s3 => {
 
-                s3.upload(s3Params).send((err, data) => {
 
-                    if (err) {
-                        console.log(err);
-                        reject(err);
+            let request = s3.upload(s3Params);
 
-                    } else {
+            if (options.progressListener) {
 
-                        console.log(completeMessage);
-
-                        this.scanFile(destination).then(result => {
-
-                            resolve(result);
-
-                        }, err => {
-
-                            console.log(err);
-                            reject(err);
-                        });
-
-                    }
+                request["on"]("httpUploadProgress", (progressEvent) => {
+                    options.progressListener.progress(destination, progressEvent.loaded, progressEvent.total);
 
                 });
-            });
-        });
 
+            }
+
+
+            return request.promise().then(data => {
+
+                console.log(completeMessage);
+
+                return this.scanFile(destination);
+
+            });
+
+        });
     }
 
 
@@ -385,7 +380,6 @@ export class FileService implements IFileService {
             };
 
             return this.process(sourceFiles, processor, options.parallel);
-
 
 
         });
@@ -1011,6 +1005,7 @@ export class FileService implements IFileService {
             //Delete S3
 
             return this.s3Promise.then(s3 => {
+
                 return s3.deleteObject({Bucket: file.bucket, Key: file.key}).promise().then(data => {
 
                     console.log(completeMessage);
