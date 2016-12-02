@@ -270,7 +270,7 @@ export class FileService implements IFileService {
             if (options.progressListener) {
 
                 request["on"]("httpUploadProgress", (progressEvent) => {
-                    options.progressListener.progress(destination, progressEvent.loaded, progressEvent.total);
+                    options.progressListener(destination, progressEvent.loaded, progressEvent.total);
 
                 });
 
