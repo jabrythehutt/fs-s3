@@ -345,9 +345,9 @@ export class FileService implements IFileService {
 
     /**
      * Upload files in the browser
-     * @param inputList
-     * @param destinationFolder
-     * @param opt
+     * @param parameters.inputList
+     * @param parameters.destinationFolder
+     * @param parameters.options
      */
     uploadFiles(parameters):Promise<ScannedFile[]> {
         let inputList = parameters.inputList;
