@@ -28,7 +28,7 @@
     "@types/mime": "0.0.28",
     "@types/mocha": "^2.2.31",
     "@types/node": "^6.0.38",
-    "aws-sdk": "^2.7.7",
+    "aws-sdk": "^2.7.10",
     "compression-webpack-plugin": "^0.3.1",
     "core-js": "^2.4.0",
     "json-loader": "^0.5.4",
