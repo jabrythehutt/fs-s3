@@ -652,6 +652,39 @@ export class FileService implements IFileService {
     }
 
 
+    listAllFolders(folder: AnyFile, delimiter, startAfter?: string): Promise<AnyFile[]> {
+
+        return this.s3Promise.then(s3 => {
+            return s3.listObjectsV2({
+                Bucket: folder.bucket,
+                Prefix: folder.key,
+                Delimiter: delimiter,
+                StartAfter: startAfter
+            }).promise().then(data => {
+                let folders: AnyFile[] = data.CommonPrefixes.map(prefix => {
+                    return {
+                        bucket: folder.bucket,
+                        key: prefix.Prefix
+                    };
+                });
+                if (data.StartAfter) {
+
+                    return this.listAllFolders(folder, delimiter, data.StartAfter).then(nextFolders => {
+                        return folders.concat(nextFolders);
+                    });
+
+                } else {
+
+                    return folders;
+                }
+            })
+
+        });
+
+
+    };
+
+
     listS3(bucket:string, prefix:string, suffix?:string, marker?:string):Promise<ScannedFile[]> {
 
         // console.log("Listing s3");
