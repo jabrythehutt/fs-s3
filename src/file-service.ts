@@ -55,15 +55,17 @@ export class FileService implements IFileService {
      }*/
 
 
-    getReadURL(file:ScannedFile):Promise<string> {
+    getReadURL(file: ScannedFile, expires?: number): Promise<string> {
+
+        //Create a link that lasts for 24h by default
+        expires = expires || 60 * 60 * 24;
 
         if (file.bucket) {
 
             return this.s3Promise.then(s3 => {
 
                 return new Promise<string>((resolve, reject) => {
-                    //Create a link that lasts for 24h
-                    const expires = 60 * 60 * 24;
+
 
                     s3.getSignedUrl('getObject', {Bucket: file.bucket, Key: file.key, Expires: expires}, (err, url) => {
 
@@ -799,8 +801,6 @@ export class FileService implements IFileService {
 
     listLocal(dir:string):Promise<ScannedFile[]> {
 
-
-
         try {
 
 
@@ -828,9 +828,6 @@ export class FileService implements IFileService {
 
 
         }
-
-
-
 
     }
 
