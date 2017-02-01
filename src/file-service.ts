@@ -654,14 +654,14 @@ export class FileService implements IFileService {
     }
 
 
-    listAllFolders(folder: AnyFile, delimiter, startAfter?: string): Promise<AnyFile[]> {
+    listAllFolders(folder: AnyFile, delimiter, token?: string): Promise<AnyFile[]> {
 
         return this.s3Promise.then(s3 => {
             return s3.listObjectsV2({
                 Bucket: folder.bucket,
                 Prefix: folder.key,
                 Delimiter: delimiter,
-                StartAfter: startAfter
+                ContinuationToken: token
             }).promise().then(data => {
                 let folders: AnyFile[] = data.CommonPrefixes.map(prefix => {
                     return {
@@ -669,9 +669,9 @@ export class FileService implements IFileService {
                         key: prefix.Prefix
                     };
                 });
-                if (data.StartAfter) {
+                if (data.NextContinuationToken) {
 
-                    return this.listAllFolders(folder, delimiter, data.StartAfter).then(nextFolders => {
+                    return this.listAllFolders(folder, delimiter, data.NextContinuationToken).then(nextFolders => {
                         return folders.concat(nextFolders);
                     });
 
@@ -687,17 +687,16 @@ export class FileService implements IFileService {
     };
 
 
-    listS3(bucket:string, prefix:string, suffix?:string, marker?:string):Promise<ScannedFile[]> {
+    listS3(bucket: string, prefix: string, delimiter?: string, token?: string): Promise<ScannedFile[]> {
 
         // console.log("Listing s3");
         return this.s3Promise.then(s3 => {
 
-            return s3.listObjects({
+            return s3.listObjectsV2({
                 Bucket: bucket,
-                MaxKeys: 1000000,
                 Prefix: prefix,
-                Delimiter: suffix,
-                Marker: marker
+                Delimiter: delimiter,
+                ContinuationToken: token
             }).promise().then(data => {
 
 
@@ -713,11 +712,9 @@ export class FileService implements IFileService {
                 });
 
 
-                if (data.IsTruncated) {
+                if (data.NextContinuationToken) {
 
-                    marker = data.NextMarker || data.Contents[data.Contents.length - 1].Key;
-
-                    return this.listS3(bucket, prefix, suffix, marker).then(resultItems => {
+                    return this.listS3(bucket, prefix, delimiter, data.NextContinuationToken).then(resultItems => {
 
                         items = items.concat(resultItems);
                         return items;
