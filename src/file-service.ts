@@ -481,7 +481,7 @@ export class FileService implements IFileService {
      * @param file {File}
      * @returns {any|Promise<T>|Promise}
      */
-    calculateUploadMD5(file:File):Promise<string> {
+    async calculateUploadMD5(file: File): Promise<string> {
 
 
         let hash = crypto.createHash('md5');
@@ -491,37 +491,21 @@ export class FileService implements IFileService {
         let delta = 1024 * 100;
 
 
-        let processPart = () => {
+        while (currentIndex >= file.size) {
 
-            let complete = currentIndex >= file.size;
-
-            if (!complete) {
+            let nextIndex = Math.min(currentIndex + delta, file.size);
 
 
-                let nextIndex = Math.min(currentIndex + delta, file.size);
+            let blob = file.slice(currentIndex, nextIndex);
 
+            let sectionString = await this.readBlob(blob);
 
-                let blob = file.slice(currentIndex, nextIndex);
+            hash.update(sectionString);
+            currentIndex = nextIndex;
 
-                return this.readBlob(blob).then((sectionString) => {
+        }
 
-                    hash.update(sectionString);
-                    currentIndex = nextIndex;
-
-                    return processPart()
-
-                });
-
-            } else {
-
-                return Promise.resolve<string>(hash.digest('hex'));
-
-            }
-
-
-        };
-
-        return processPart();
+        return hash.digest("hex");
 
     }
 

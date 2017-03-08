@@ -36,7 +36,7 @@
     "ntypescript": "^1.201608290012.1",
     "ts-loader": "^0.8.2",
     "ts-node": "^1.7.0",
-    "typescript": "^2.0.0",
+    "typescript": "^2.2.1",
     "webpack": "^1.13.1"
   },
   "dependencies": {

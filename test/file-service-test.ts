@@ -75,6 +75,7 @@ describe("Test File Service", function () {
         });
     });
 
+
     it("Should write a local file", function(done){
 
         fileService.write(testFileText,{key: testFilePath},{overwrite:true, skipSame:false}).then(() => {
