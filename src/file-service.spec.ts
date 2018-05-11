@@ -9,10 +9,11 @@ import {FileService} from "./file-service";
 import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
-import * as S3rver from "s3rver";
 import {resolve as resolvePath} from "path";
+import * as S3rver from "s3rver";
 import {tmpdir} from "os";
 import * as del from "del";
+
 let s3: S3;
 let fileService: FileService;
 const testBucket = "foo";
@@ -21,7 +22,8 @@ const testFilePath = resolvePath(__dirname, "..", "test", "test-file.txt");
 let s3rver;
 const testDir = resolvePath(tmpdir(), `s3rver${new Date().getTime()}`);
 
-describe("Test File Service", () => {
+describe("Test File Service", function() {
+    this.timeout(10000);
 
     before(async () => {
         await new Promise((resolve, reject) => {

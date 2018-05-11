@@ -1,3 +1,4 @@
+[![CircleCI](https://circleci.com/gh/djabry/fs-s3.svg?style=svg)](https://circleci.com/gh/djabry/fs-s3)
 #Yet another S3 wrapper
 
 I often find myself reinventing the wheel when using the AWS SDK for S3 browser and node-based operations.
