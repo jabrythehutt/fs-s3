@@ -37,6 +37,8 @@ describe("File Service", function() {
                 const endpoint = `http://${host}:${port}`;
 
                 s3 = new S3({
+                    accessKeyId: "foo",
+                    secretAccessKey: "bar",
                     endpoint,
                     sslEnabled: false,
                     s3ForcePathStyle: true
