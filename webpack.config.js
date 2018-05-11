@@ -7,11 +7,13 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
+var CleanWebpackPlugin = require("clean-webpack-plugin");
+var distDir = path_1.resolve(__dirname, "dist");
 exports.default = {
     mode: "production",
     entry: path_1.resolve(__dirname, "fs-s3-standalone.ts"),
     output: {
-        path: path_1.resolve(__dirname, "dist"),
+        path: distDir,
         filename: "fs-s3-standalone.min.js",
         libraryTarget: "var",
         library: "fss3"
@@ -44,6 +46,8 @@ exports.default = {
     node: {
         fs: "empty"
     },
-    plugins: []
+    plugins: [
+        new CleanWebpackPlugin([distDir])
+    ]
 };
 //# sourceMappingURL=webpack.config.js.map

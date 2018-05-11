@@ -753,7 +753,7 @@ export class FileService implements IFileService {
 
             const sameFile = existingFile.md5 === source.md5;
 
-                return (sameFilename && !options.overwrite) || (sameFile && sameFilename);
+            return (sameFilename && !options.overwrite) || (sameFile && sameFilename);
 
             }) && true;
 
