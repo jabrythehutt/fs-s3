@@ -12,13 +12,14 @@ import * as path from "path";
 import * as S3rver from "s3rver";
 import {resolve as resolvePath} from "path";
 import {tmpdir} from "os";
-
+import * as del from "del";
 let s3: S3;
 let fileService: FileService;
 const testBucket = "foo";
 const testFileText = "This is a test file";
 const testFilePath = resolvePath(__dirname, "..", "test", "test-file.txt");
 let s3rver;
+const testDir = resolvePath(tmpdir(), `s3rver${new Date().getTime()}`);
 
 describe("Test File Service", () => {
 
@@ -29,7 +30,7 @@ describe("Test File Service", () => {
                 port: 4569,
                 hostname: "localhost",
                 silent: false,
-                directory: resolvePath(tmpdir(), "s3rver")
+                directory: testDir
             }).run((err, host, port) => {
                 const endpoint = `http://${host}:${port}`;
 
@@ -118,6 +119,8 @@ describe("Test File Service", () => {
                 resolve();
             });
         });
+
+        await del([testDir], {force: true});
 
     });
 

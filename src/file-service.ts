@@ -11,6 +11,7 @@ import {ScannedFile} from "./scanned-file";
 import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
 import {unlinkSync} from "fs";
+import {log} from "winston";
 
 /**
  * Created by djabry on 17/05/2016.
@@ -96,8 +97,6 @@ export class FileService implements IFileService {
             // Otherwise do in series
             let promise: Promise<B[]> = Promise.resolve([] as B[]);
 
-            // console.log("Creating queue for", JSON.stringify(inputElements));
-
             inputElements.forEach(element => {
 
                 promise = promise.then((outputElements) => {
@@ -119,16 +118,16 @@ export class FileService implements IFileService {
     promisify<A, B>(inputFunction: (inputParams: A, callback: (err, data: B) => any) => any, inputParams: A):
         Promise<B> {
 
-        // console.log("Promisifying", inputFunction, inputParams);
+        // log("debug", "Promisifying", inputFunction, inputParams);
         return new Promise((resolve, reject) => {
 
             try {
 
                 inputFunction(inputParams, (err, data) => {
 
-                    // console.log("Completed execution");
+                    // log("debug", "Completed execution");
                     if (err) {
-                        console.log(err);
+                        log("debug", err);
                         reject(err);
                     } else {
 
@@ -138,7 +137,7 @@ export class FileService implements IFileService {
                 });
 
             } catch (err) {
-                console.log(err);
+                log("debug", err);
                 reject(err);
             }
 
@@ -218,13 +217,13 @@ export class FileService implements IFileService {
         };
 
         Object.keys(extraParams).forEach(extraKey => {
-            // console.log("Setting extra S3 params:", extraKey, "to", extraParams[extraKey]);
+            // log("debug", "Setting extra S3 params:", extraKey, "to", extraParams[extraKey]);
             s3Params[extraKey] = extraParams[extraKey];
         });
 
         if (Object.keys(extraParams).length) {
 
-            // console.log("Added extra s3 params to request: ", s3Params);
+            // log("debug", "Added extra s3 params to request: ", s3Params);
         }
 
         return this.s3Promise.then(s3 => {
@@ -242,7 +241,7 @@ export class FileService implements IFileService {
 
             return request.promise().then(data => {
 
-                console.log(completeMessage);
+                log("debug", completeMessage);
 
                 return this.scanFile(destination);
 
@@ -397,7 +396,7 @@ export class FileService implements IFileService {
 
             reader.onerror = (err) => {
 
-                console.log(err);
+                log("error", err.toString());
                 reject(err);
             };
 
@@ -448,14 +447,14 @@ export class FileService implements IFileService {
             });
 
             stream.on("error", (err) => {
-                console.log(err);
+                log("error", err);
                 reject(err);
             });
 
             stream.on("end", () => {
 
                 const result = hash.digest("hex"); // e.g. 34f7a3113803f8ed3b8fd7ce5656ebec
-                // console.log("Completed md5 calculation: ", result);
+                // log("debug", "Completed md5 calculation: ", result);
                 resolve(result);
 
             });
@@ -506,7 +505,7 @@ export class FileService implements IFileService {
 
     calculateLocalMD5(localPath: string): Promise<string> {
         // Once the file has been downloaded, calculate the checksum
-        // console.log("Starting md5 calculation");
+        // log("debug", "Starting md5 calculation");
 
         const stream: fs.ReadStream = fs.createReadStream(localPath);
 
@@ -585,7 +584,7 @@ export class FileService implements IFileService {
 
     listS3(bucket: string, prefix: string, delimiter?: string, token?: string): Promise<ScannedFile[]> {
 
-        // console.log("Listing s3");
+        // log("debug", "Listing s3");
         return this.s3Promise.then(s3 => {
 
             return s3.listObjectsV2({
@@ -700,7 +699,7 @@ export class FileService implements IFileService {
 
         } catch (err) {
 
-            console.log(err);
+            log("debug", err);
 
             return new Promise((resolve, reject) => {
                 reject(err);
@@ -715,7 +714,7 @@ export class FileService implements IFileService {
      * @param file {AnyFile}
      */
     list(file: AnyFile): Promise<ScannedFile[]> {
-        // console.log("Listing files", JSON.stringify(file));
+        // log("debug", "Listing files", JSON.stringify(file));
         file = this.fixFile(file);
 
         if (file.bucket) {
@@ -786,17 +785,17 @@ export class FileService implements IFileService {
                         };
 
                         Object.keys(options.s3Params).forEach(extraKey => {
-                            // console.log("Setting extra S3 params:", extraKey, "to", options.s3Params[extraKey]);
+                            // log("debug", "Setting extra S3 params:", extraKey, "to", options.s3Params[extraKey]);
                             copyObjectRequest[extraKey] = options.s3Params[extraKey];
                         });
 
                         if (Object.keys(options.s3Params).length) {
 
-                            //  console.log("Extra properties added to S3 request",copyObjectRequest);
+                            //  log("debug", "Extra properties added to S3 request",copyObjectRequest);
                         }
 
                         s3.copyObject(copyObjectRequest).promise().then(data => {
-                            console.log(completeMessage);
+                            log("debug", completeMessage);
                             resolve(destination);
 
                         }, err => {
@@ -814,12 +813,12 @@ export class FileService implements IFileService {
                             .createReadStream();
 
                         file.on("error", (err) => {
-                            console.log(err);
+                            log("debug", err);
                             reject(err);
                         });
 
                         file.on("close", (ex) => {
-                            console.log(completeMessage);
+                            log("debug", completeMessage);
                             resolve(destination);
                         });
 
@@ -835,7 +834,7 @@ export class FileService implements IFileService {
                             resolve(dest);
                         }, err => {
 
-                            console.log(err);
+                            log("debug", err);
                             reject(err);
                         });
 
@@ -847,17 +846,17 @@ export class FileService implements IFileService {
 
                         const rd = fs.createReadStream(sourceFile.key);
                         rd.on("error", (err) => {
-                            console.log(err);
+                            log("debug", err);
                             reject(err);
                         });
                         const wr = fs.createWriteStream(destination.key);
 
                         wr.on("error", (err) => {
-                            console.log(err);
+                            log("debug", err);
                             reject(err);
                         });
                         wr.on("close", (ex) => {
-                            console.log(completeMessage);
+                            log("debug", completeMessage);
                             resolve(destination);
                         });
 
@@ -867,7 +866,7 @@ export class FileService implements IFileService {
 
                 } else {
 
-                    console.log("Skipping existing file: ", this.toFileString(destination));
+                    log("debug", "Skipping existing file: ", this.toFileString(destination));
                     resolve(destination);
                 }
 
@@ -902,7 +901,7 @@ export class FileService implements IFileService {
 
             const s3 = await this.s3Promise;
             await s3.deleteObject({Bucket: file.bucket, Key: file.key}).promise();
-            console.log(completeMessage);
+            log("debug", completeMessage);
 
         } else {
             // Delete local file
@@ -922,7 +921,7 @@ export class FileService implements IFileService {
 
         return this.list(file).then(files => {
 
-            // console.log("Deleting files", JSON.stringify(files));
+            // log("debug", "Deleting files", JSON.stringify(files));
             const processor = (inputFile: AnyFile) => {
                 return this.doDeleteFile(inputFile);
             };
@@ -1003,7 +1002,7 @@ export class FileService implements IFileService {
 
             if (!options.overwrite && isFile) {
 
-                console.log("Skipping writing existing file", this.toFileString(isFile));
+                log("debug", "Skipping writing existing file", this.toFileString(isFile));
                 return isFile;
 
             } else {
@@ -1014,7 +1013,7 @@ export class FileService implements IFileService {
 
                 } else {
 
-                    // console.log("Writing string to", file.key);
+                    // log("debug", "Writing string to", file.key);
 
                     return new Promise<ScannedFile>((resolve, reject) => {
 
@@ -1024,11 +1023,11 @@ export class FileService implements IFileService {
                             fs.writeFile(file.key, body, (err) => {
 
                                 if (err) {
-                                    console.log(err);
+                                    log("debug", err.toString());
                                     reject(err);
 
                                 } else {
-                                    console.log("Written string to file", file.key);
+                                    log("debug", "Written string to file", file.key);
 
                                     this.scanFile(file).then(scannedFile => {
                                         resolve(scannedFile);
