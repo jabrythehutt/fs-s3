@@ -3,6 +3,7 @@
  */
 import {S3} from "aws-sdk";
 import * as fs from "fs";
+import {unlinkSync} from "fs";
 import * as path from "path";
 import {getType} from "mime";
 import {createHash} from "crypto";
@@ -10,7 +11,6 @@ import {IFileService} from "./ifile-service";
 import {ScannedFile} from "./scanned-file";
 import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
-import {unlinkSync} from "fs";
 import {log} from "winston";
 
 /**
@@ -611,7 +611,7 @@ export class FileService implements IFileService {
                         .then(resultItems => {
 
                         items = items.concat(resultItems);
-                            return items as ScannedFile[];
+                        return items as ScannedFile[];
 
                     });
 
