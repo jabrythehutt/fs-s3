@@ -1,0 +1,15 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk-node
+    steps:
+      - checkout
+      - restore_cache: # restore the saved cache after the first run or if `package.json` has changed
+          key: fs-s3-{{ checksum "package.json" }}
+      - run: npm install
+      - save_cache: # saves the project dependencies
+          paths:
+            - node_modules
+          key: fs-s3-{{ checksum "package.json" }}
+      - run: npm run test
