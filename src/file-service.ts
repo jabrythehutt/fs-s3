@@ -4,60 +4,43 @@
 import {S3} from "aws-sdk";
 import * as fs from "fs";
 import * as path from "path";
-import * as mime from "mime";
-import * as crypto from "crypto";
+import {getType} from "mime";
+import {createHash} from "crypto";
 import {IFileService} from "./ifile-service";
 import {ScannedFile} from "./scanned-file";
 import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
-
+import {unlinkSync} from "fs";
 
 /**
  * Created by djabry on 17/05/2016.
  */
 
-
-
-
-
-
-
-
-
 export class FileService implements IFileService {
 
-    /*readLines(file: AnyFile, startByte?: number, endByte?: number): Promise<LineReader> {
+    private s3Promise: Promise<S3>;
 
-     if(file.bucket) {
+    /**
+     *
+     * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
+     */
+    constructor(s3: S3 | Promise<S3>) {
 
+        if (typeof s3["then"] === "function") {
 
-     return this.s3Promise.then(s3 => {
+            this.s3Promise = s3 as Promise<S3>;
 
-     let rangeString = null;
+        } else {
 
-     if(startByte || endByte) {
+            this.s3Promise = Promise.resolve(s3);
 
-     rangeString = "bytes="+(startByte || "")+"-"+(endByte || "");
-     }
+        }
 
-     return s3.getObject({Bucket: file.bucket, Key: file.key, Range: rangeString}).promise().then(result => {
-
-     return new S3LineReader(result);
-     });
-     });
-
-     } else {
-
-     //Not supported yet
-     return null;
-     }
-
-     }*/
-
+    }
 
     getReadURL(file: ScannedFile, expires?: number): Promise<string> {
 
-        //Create a link that lasts for 24h by default
+        // Create a link that lasts for 24h by default
         expires = expires || 60 * 60 * 24;
 
         if (file.bucket) {
@@ -66,9 +49,7 @@ export class FileService implements IFileService {
 
                 return new Promise<string>((resolve, reject) => {
 
-
-                    s3.getSignedUrl('getObject', {Bucket: file.bucket, Key: file.key, Expires: expires}, (err, url) => {
-
+                    s3.getSignedUrl("getObject", {Bucket: file.bucket, Key: file.key, Expires: expires}, (err, url) => {
 
                         if (err) {
 
@@ -83,7 +64,6 @@ export class FileService implements IFileService {
 
                 });
 
-
             });
         } else {
 
@@ -91,34 +71,30 @@ export class FileService implements IFileService {
 
         }
 
-
     }
 
     /**
      * Execute promises in series or parallel
      */
-    process<A, B>(inputElements:A[], processor:(element:A) => Promise<B>, parallel:boolean):Promise<B[]> {
+    process<A, B>(inputElements: A[], processor: (element: A) => Promise<B>, parallel: boolean): Promise<B[]> {
 
         if (parallel) {
 
-            //Process all in parallel
-            let outputPromises:Promise<B>[] = inputElements.map(inputElement => {
+            // Process all in parallel
+            const outputPromises: Array<Promise<B>> = inputElements.map(inputElement => {
                 return processor(inputElement);
             });
 
+            // es6-shim typings don't seem to be correct so need to do this workaround for Promise.all
+            return Promise.all(outputPromises).then((results: any) => {
 
-            //es6-shim typings don't seem to be correct so need to do this workaround for Promise.all
-            return Promise.all(outputPromises).then((results:any) => {
-
-                return <B[]>results;
+                return results as B[];
             });
-
-
 
         } else {
 
-            //Otherwise do in series
-            let promise:Promise<B[]> = Promise.resolve(<B[]>[]);
+            // Otherwise do in series
+            let promise: Promise<B[]> = Promise.resolve([] as B[]);
 
             // console.log("Creating queue for", JSON.stringify(inputElements));
 
@@ -138,20 +114,19 @@ export class FileService implements IFileService {
             return promise;
         }
 
-
-
     }
 
-    promisify<A, B>(inputFunction:(inputParams:A, callback:(err, data:B)=>any)=>any, inputParams:A):Promise<B> {
+    promisify<A, B>(inputFunction: (inputParams: A, callback: (err, data: B) => any) => any, inputParams: A):
+        Promise<B> {
 
-        //console.log("Promisifying", inputFunction, inputParams);
+        // console.log("Promisifying", inputFunction, inputParams);
         return new Promise((resolve, reject) => {
 
             try {
 
                 inputFunction(inputParams, (err, data) => {
 
-                    //console.log("Completed execution");
+                    // console.log("Completed execution");
                     if (err) {
                         console.log(err);
                         reject(err);
@@ -162,12 +137,10 @@ export class FileService implements IFileService {
 
                 });
 
-
             } catch (err) {
                 console.log(err);
                 reject(err);
             }
-
 
         });
     }
@@ -176,16 +149,16 @@ export class FileService implements IFileService {
      * Waits for a file to be written
      * @param file {object} - The file to wait for
      */
-    waitForFile(file:AnyFile):Promise<ScannedFile> {
+    waitForFile(file: AnyFile): Promise<ScannedFile> {
         if (!file.bucket) {
-            //Local wait is not supported yet
+            // Local wait is not supported yet
             throw new Error("Local waiting is not supported yet");
 
         } else {
 
             return this.s3Promise.then(s3 => {
 
-                return s3.waitFor('objectExists', {Bucket: file.bucket, Key: file.key}).promise().then(data => {
+                return s3.waitFor("objectExists", {Bucket: file.bucket, Key: file.key}).promise().then(data => {
 
                     /*return {
                      bucket: file.bucket,
@@ -195,31 +168,25 @@ export class FileService implements IFileService {
                      mimeType: mime.lookup(file.key)
                      };*/
 
-
-                    //Strange behaviour when file already exists leading to no ETag or size being present in result,
-                    //List object instead
+                    // Strange behaviour when file already exists leading to no ETag or size being present in result,
+                    // List object instead
 
                     return this.isFile(file);
-
-
 
                 });
 
             });
 
-
         }
     }
 
-
-    fixFile<T extends AnyFile>(destination:T):T {
-
+    fixFile<T extends AnyFile>(destination: T): T {
 
         if (destination.bucket) {
-            //Replace any back slashes with forward slashes in case using windows
+            // Replace any back slashes with forward slashes in case using windows
             destination.key = destination.key.replace(/\\/g, "/");
 
-            //Remove any prefix forward slashes
+            // Remove any prefix forward slashes
 
             if (destination.key.indexOf("/") === 0) {
                 destination.key = destination.key.replace("/", "");
@@ -229,45 +196,40 @@ export class FileService implements IFileService {
 
         return destination;
 
-
     }
 
-
-    doWriteToS3(body, destination:AnyFile, options:WriteOptions):Promise<ScannedFile> {
+    doWriteToS3(body, destination: AnyFile, options: WriteOptions): Promise<ScannedFile> {
 
         options = options || {};
 
         destination = this.fixFile(destination);
 
-        let completeMessage = "Completed upload to " + this.toFileString(destination);
+        const completeMessage = `Completed upload to ${this.toFileString(destination)}`;
 
+        const extraParams = options.s3Params || {};
 
-        let extraParams = options.s3Params || {};
-
-        let s3Params = {
-            //Replace any backslashes introduced by Windows local files
+        const s3Params = {
+            // Replace any backslashes introduced by Windows local files
             Key: destination.key,
             Bucket: destination.bucket,
             Body: body,
-            ContentType: mime.lookup(destination.key) || 'application/octet-stream',
+            ContentType: getType(destination.key) || "application/octet-stream",
             ACL: options.makePublic ? "public-read" : null
         };
 
         Object.keys(extraParams).forEach(extraKey => {
-            //console.log("Setting extra S3 params:", extraKey, "to", extraParams[extraKey]);
+            // console.log("Setting extra S3 params:", extraKey, "to", extraParams[extraKey]);
             s3Params[extraKey] = extraParams[extraKey];
         });
 
         if (Object.keys(extraParams).length) {
 
-            //console.log("Added extra s3 params to request: ", s3Params);
+            // console.log("Added extra s3 params to request: ", s3Params);
         }
-
 
         return this.s3Promise.then(s3 => {
 
-
-            let request = s3.upload(s3Params);
+            const request = s3.upload(s3Params);
 
             if (options.progressListener) {
 
@@ -277,7 +239,6 @@ export class FileService implements IFileService {
                 });
 
             }
-
 
             return request.promise().then(data => {
 
@@ -290,14 +251,14 @@ export class FileService implements IFileService {
         });
     }
 
+    doUploadFile(file: File, destination: AnyFile, destinationFiles: ScannedFile[], options: WriteOptions):
+        Promise<ScannedFile> {
 
-    doUploadFile(file:File, destination:AnyFile, destinationFiles:ScannedFile[], options:WriteOptions):Promise<ScannedFile> {
-
-        let existingFile = destinationFiles.find((existingFile) => {
-            return existingFile.key === destination.key
+        const existingFile = destinationFiles.find((f) => {
+            return f.key === destination.key;
         });
 
-        let skip = existingFile && !options.overwrite;
+        const skip = existingFile && !options.overwrite;
 
         if (!skip) {
 
@@ -313,7 +274,6 @@ export class FileService implements IFileService {
 
     }
 
-
     /**
      *  Upload a single file from the browser
      * @param file
@@ -321,7 +281,8 @@ export class FileService implements IFileService {
      * @param writeOptions
      * @param destinationFiles
      */
-    uploadFile(file:File, destination:AnyFile, writeOptions?:WriteOptions, destinationFiles?:ScannedFile[]):Promise<ScannedFile> {
+    uploadFile(file: File, destination: AnyFile, writeOptions?: WriteOptions, destinationFiles?: ScannedFile[]):
+        Promise<ScannedFile> {
 
         writeOptions = writeOptions || {overwrite: false, makePublic: false};
 
@@ -331,17 +292,15 @@ export class FileService implements IFileService {
 
         } else {
 
-            return this.findDestinationFiles(writeOptions, destination).then(destinationFiles => {
+            return this.findDestinationFiles(writeOptions, destination).then(foundDestinationFiles => {
 
-                return this.doUploadFile(file, destination, destinationFiles, writeOptions);
+                return this.doUploadFile(file, destination, foundDestinationFiles, writeOptions);
 
             });
 
         }
 
-
     }
-
 
     /**
      * Upload files in the browser
@@ -349,30 +308,30 @@ export class FileService implements IFileService {
      * @param parameters.destinationFolder
      * @param parameters.options
      */
-    uploadFiles(parameters):Promise<ScannedFile[]> {
-        let inputList = parameters.inputList;
-        let destinationFolder = parameters.destinationFolder;
+    uploadFiles(parameters): Promise<ScannedFile[]> {
+        const inputList = parameters.inputList;
+        const destinationFolder = parameters.destinationFolder;
         let options = parameters.options;
 
         options = options || {makePublic: false, parallel: false, overwrite: false, skipSame: true};
 
-        let sourceFiles = [];
-        //Arrange input files into a regular array
+        const sourceFiles = [];
+        // Arrange input files into a regular array
         for (let ix = 0; ix < inputList.length; ix++) {
 
-            let file = inputList.item(ix);
+            const file = inputList.item(ix);
             sourceFiles.push(file);
 
         }
 
         return this.findDestinationFiles(options, destinationFolder).then(destinationFiles => {
 
-            let processor = (inputFile:File) => {
-                let key = destinationFolder.key + "/" + inputFile.name;
+            const processor = (inputFile: File) => {
+                const key = `${destinationFolder.key}/${inputFile.name}`;
 
-                let destinationFile:AnyFile = {
+                const destinationFile: AnyFile = {
                     bucket: destinationFolder.bucket,
-                    key: key
+                    key
                 };
 
                 return this.uploadFile(inputFile, destinationFile, options, destinationFiles);
@@ -381,16 +340,13 @@ export class FileService implements IFileService {
 
             return this.process(sourceFiles, processor, options.parallel);
 
-
         });
-
 
     }
 
-
     ensureDirectoryExistence(filePath) {
 
-        let dirname = path.dirname(filePath);
+        const dirname = path.dirname(filePath);
         if (this.directoryExists(dirname)) {
             return true;
         }
@@ -398,23 +354,20 @@ export class FileService implements IFileService {
         fs.mkdirSync(dirname);
     }
 
-    directoryExists(path) {
-
+    directoryExists(dirPath) {
 
         try {
-            return fs.statSync(path).isDirectory();
-        }
-        catch (err) {
+            return fs.statSync(dirPath).isDirectory();
+        } catch (err) {
             return false;
         }
     }
-
 
     /**
      * Checks if it exists and is a file
      * @param file
      */
-    isFile(file:AnyFile):Promise<ScannedFile> {
+    isFile(file: AnyFile): Promise<ScannedFile> {
 
         return this.list(file).then(files => {
 
@@ -432,35 +385,13 @@ export class FileService implements IFileService {
         });
     }
 
-    private s3Promise: Promise<S3>;
+    readBlob(blob: Blob): Promise<string> {
 
+        return new Promise((resolve, reject) => {
 
-    /**
-     *
-     * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
-     */
-    constructor(s3:S3 | Promise<S3>) {
-
-        if (typeof s3["then"] === "function") {
-
-            this.s3Promise = <Promise<S3>>s3;
-
-        } else {
-
-            this.s3Promise = Promise.resolve(s3);
-
-        }
-
-    }
-
-
-    readBlob(blob:Blob):Promise<string> {
-
-        return new Promise((resolve, reject)=> {
-
-            let reader = new FileReader();
+            const reader = new FileReader();
             reader.onload = (evt) => {
-                let rangeString = evt.target["result"];
+                const rangeString = evt.target["result"];
                 resolve(rangeString);
             };
 
@@ -483,22 +414,19 @@ export class FileService implements IFileService {
      */
     async calculateUploadMD5(file: File): Promise<string> {
 
-
-        let hash = crypto.createHash('md5');
+        const hash = createHash("md5");
         let currentIndex = 0;
 
-        //Read 100kb at a time
-        let delta = 1024 * 100;
-
+        // Read 100kb at a time
+        const delta = 1024 * 100;
 
         while (currentIndex >= file.size) {
 
-            let nextIndex = Math.min(currentIndex + delta, file.size);
+            const nextIndex = Math.min(currentIndex + delta, file.size);
 
+            const blob = file.slice(currentIndex, nextIndex);
 
-            let blob = file.slice(currentIndex, nextIndex);
-
-            let sectionString = await this.readBlob(blob);
+            const sectionString = await this.readBlob(blob);
 
             hash.update(sectionString);
             currentIndex = nextIndex;
@@ -509,47 +437,42 @@ export class FileService implements IFileService {
 
     }
 
+    calculateStreamMD5(stream: fs.ReadStream): Promise<string> {
 
-    calculateStreamMD5(stream:fs.ReadStream):Promise<string> {
-
-
-        let hash = crypto.createHash("md5");
+        const hash = createHash("md5");
 
         return new Promise((resolve, reject) => {
 
-            stream.on('data', (data) => {
-                hash.update(data, 'utf8')
+            stream.on("data", (data) => {
+                hash.update(data, "utf8");
             });
 
-            stream.on('error', (err) => {
+            stream.on("error", (err) => {
                 console.log(err);
                 reject(err);
             });
 
-            stream.on('end', () => {
+            stream.on("end", () => {
 
-                let result = hash.digest('hex'); // e.g. 34f7a3113803f8ed3b8fd7ce5656ebec
-                //console.log("Completed md5 calculation: ", result);
+                const result = hash.digest("hex"); // e.g. 34f7a3113803f8ed3b8fd7ce5656ebec
+                // console.log("Completed md5 calculation: ", result);
                 resolve(result);
 
             });
-
 
         });
 
     }
 
-
-    scanFile(file:AnyFile):Promise<ScannedFile> {
+    scanFile(file: AnyFile): Promise<ScannedFile> {
 
         if (file["md5"] && file["size"] && file["mimeType"]) {
 
             return new Promise((resolve, reject) => {
-                let scannedFile = <ScannedFile>file;
+                const scannedFile = file as ScannedFile;
                 resolve(scannedFile);
 
             });
-
 
         } else {
 
@@ -562,17 +485,16 @@ export class FileService implements IFileService {
 
             } else {
 
-
                 return this.calculateLocalMD5(file.key).then(md5 => {
 
                     return this.calculateLocalFileSize(file.key).then(fileSize => {
 
-                        return <ScannedFile>{
+                        return {
                             key: file.key,
-                            md5: md5,
+                            md5,
                             size: fileSize,
-                            mimeType: mime.lookup(file.key)
-                        };
+                            mimeType: getType(file.key)
+                        } as ScannedFile;
                     });
 
                 });
@@ -582,18 +504,17 @@ export class FileService implements IFileService {
 
     }
 
-    calculateLocalMD5(localPath:string):Promise<string> {
-        //Once the file has been downloaded, calculate the checksum
+    calculateLocalMD5(localPath: string): Promise<string> {
+        // Once the file has been downloaded, calculate the checksum
         // console.log("Starting md5 calculation");
 
-
-        let stream:fs.ReadStream = fs.createReadStream(localPath);
+        const stream: fs.ReadStream = fs.createReadStream(localPath);
 
         return this.calculateStreamMD5(stream);
 
     }
 
-    calculateLocalFileSize(localPath:string):Promise<number> {
+    calculateLocalFileSize(localPath: string): Promise<number> {
 
         localPath = path.resolve(localPath);
 
@@ -606,11 +527,9 @@ export class FileService implements IFileService {
      * Read the contents of a file into a string
      * @param file {object} - The file to read
      */
-    readString(file:AnyFile):Promise<string> {
-
+    readString(file: AnyFile): Promise<string> {
 
         if (file.bucket) {
-
 
             return this.s3Promise.then(s3 => {
 
@@ -619,11 +538,10 @@ export class FileService implements IFileService {
                     return data.Body.toString();
 
                 });
-            })
-
+            });
 
         } else {
-            //If it's a local file then read it from the local filesystem
+            // If it's a local file then read it from the local filesystem
 
             return this.promisify(fs.readFile, file.key).then(result => {
 
@@ -632,11 +550,7 @@ export class FileService implements IFileService {
 
         }
 
-
-
-
     }
-
 
     listAllFolders(folder: AnyFile, delimiter, token?: string): Promise<AnyFile[]> {
 
@@ -647,7 +561,7 @@ export class FileService implements IFileService {
                 Delimiter: delimiter,
                 ContinuationToken: token
             }).promise().then(data => {
-                let folders: AnyFile[] = data.CommonPrefixes.map(prefix => {
+                const folders: AnyFile[] = data.CommonPrefixes.map(prefix => {
                     return {
                         bucket: folder.bucket,
                         key: prefix.Prefix
@@ -663,13 +577,11 @@ export class FileService implements IFileService {
 
                     return folders;
                 }
-            })
+            });
 
         });
 
-
-    };
-
+    }
 
     listS3(bucket: string, prefix: string, delimiter?: string, token?: string): Promise<ScannedFile[]> {
 
@@ -683,53 +595,48 @@ export class FileService implements IFileService {
                 ContinuationToken: token
             }).promise().then(data => {
 
-
-                //Add all the files to the items list
-                let items:AnyFile[] = data.Contents.map(item => {
+                // Add all the files to the items list
+                let items: AnyFile[] = data.Contents.map(item => {
                     return {
-                        bucket: bucket,
+                        bucket,
                         key: item.Key,
                         md5: JSON.parse(item.ETag),
                         size: item.Size,
-                        mimeType: mime.lookup(item.Key)
+                        mimeType: getType(item.Key)
                     };
                 });
 
-
                 if (data.NextContinuationToken) {
 
-                    return this.listS3(bucket, prefix, delimiter, data.NextContinuationToken).then(resultItems => {
+                    return this.listS3(bucket, prefix, delimiter, data.NextContinuationToken)
+                        .then(resultItems => {
 
                         items = items.concat(resultItems);
-                        return items;
+                            return items as ScannedFile[];
 
                     });
 
-
                 } else {
 
-                    return items;
+                    return items as ScannedFile[];
                 }
             });
 
         });
 
-
     }
 
+    scanLocalFile(filePath: string): Promise<ScannedFile> {
 
-    scanLocalFile(filePath:string):Promise<ScannedFile> {
-
-
-        return this.calculateLocalFileSize(filePath).then(fileSize=> {
+        return this.calculateLocalFileSize(filePath).then(fileSize => {
 
             return this.calculateLocalMD5(filePath).then(md5 => {
 
                 return {
                     key: filePath,
-                    md5: md5,
+                    md5,
                     size: fileSize,
-                    mimeType: mime.lookup(filePath)
+                    mimeType: getType(filePath)
                 };
             });
 
@@ -737,23 +644,21 @@ export class FileService implements IFileService {
 
     }
 
+    // Find all the paths of all the local files
+    doListLocal(dir: string): string[] {
 
-    //Find all the paths of all the local files
-    doListLocal(dir:string):string[] {
-
-
-        let results:string[] = [];
+        let results: string[] = [];
 
         try {
-            let stat = fs.statSync(dir);
+            const stat = fs.statSync(dir);
             if (stat && stat.isDirectory()) {
-                let list = fs.readdirSync(dir);
+                const list = fs.readdirSync(dir);
                 list.forEach((file) => {
                     file = path.resolve(dir, file);
 
-                    let stat = fs.statSync(file);
+                    const fileStat = fs.statSync(file);
 
-                    if (stat && stat.isDirectory()) {
+                    if (fileStat && fileStat.isDirectory()) {
 
                         results = results.concat(this.doListLocal(file));
                     } else {
@@ -764,49 +669,42 @@ export class FileService implements IFileService {
 
             } else if (stat && !stat.isDirectory()) {
 
-                //Handle the case where it's just a file
+                // Handle the case where it's just a file
                 results.push(dir);
             }
 
         } catch (err) {
 
-            //Assume that an error means the file/folder doesn't exist
+            // Assume that an error means the file/folder doesn't exist
 
         }
 
         return results;
 
-
     }
 
-
-    listLocal(dir:string):Promise<ScannedFile[]> {
+    listLocal(dir: string): Promise<ScannedFile[]> {
 
         try {
 
-
-
             dir = path.resolve(dir);
 
-            let files = this.doListLocal(dir);
+            const files = this.doListLocal(dir);
 
-            let processor = (localFile:string) => {
+            const processor = (localFile: string) => {
 
                 return this.scanLocalFile(localFile);
             };
 
-            return this.process(files,processor,true);
-
+            return this.process(files, processor, true);
 
         } catch (err) {
 
             console.log(err);
 
-
-            return new Promise((resolve,reject) => {
+            return new Promise((resolve, reject) => {
                 reject(err);
             });
-
 
         }
 
@@ -816,12 +714,12 @@ export class FileService implements IFileService {
      * Recursively list all the files in the dir
      * @param file {AnyFile}
      */
-    list(file:AnyFile):Promise<ScannedFile[]> {
-        //console.log("Listing files", JSON.stringify(file));
+    list(file: AnyFile): Promise<ScannedFile[]> {
+        // console.log("Listing files", JSON.stringify(file));
         file = this.fixFile(file);
 
         if (file.bucket) {
-            //List s3
+            // List s3
 
             return this.listS3(file.bucket, file.key);
 
@@ -832,27 +730,28 @@ export class FileService implements IFileService {
         }
     }
 
+    locationsEqual(a: AnyFile, b: AnyFile): boolean {
+        return ((!a.bucket && !b.bucket) || a.bucket === b.bucket) && a.key === b.key;
+    }
 
-    doSkip(source:ScannedFile, destination:AnyFile, existingFiles:ScannedFile[], options:WriteOptions):boolean {
+    doSkip(source: ScannedFile, destination: AnyFile, existingFiles: ScannedFile[], options: WriteOptions): boolean {
 
-        if (source.bucket == destination.bucket && source.key === destination.key) {
-            //Skip if the file is the same
+        if (this.locationsEqual(source, destination)) {
+            // Skip if the file is the same
             return true;
         }
 
-
         if (options.overwrite && !options.skipSame) {
-            //Never skip when intending to overwrite and not skip same files
+            // Never skip when intending to overwrite and not skip same files
             return false;
         }
 
-
-        //Find out if the key is the same
+        // Find out if the key is the same
         return existingFiles.find( (existingFile) => {
 
-                let sameFilename = existingFile.key === destination.key;
+            const sameFilename = existingFile.key === destination.key;
 
-                let sameFile = existingFile.md5 === source.md5;
+            const sameFile = existingFile.md5 === source.md5;
 
                 return (sameFilename && !options.overwrite) || (sameFile && sameFilename);
 
@@ -860,36 +759,34 @@ export class FileService implements IFileService {
 
     }
 
-
-    doCopyFile(sourceFile:ScannedFile, destination:AnyFile, destinationList:ScannedFile[], options:WriteOptions):Promise<AnyFile> {
-
-        //console.log("Copying: ", source.bucket + "/" + source.key, "to", destination.bucket + "/" + destination.key);
+    doCopyFile(sourceFile: ScannedFile, destination: AnyFile, destinationList: ScannedFile[], options: WriteOptions):
+        Promise<AnyFile> {
         destination = this.fixFile(destination);
 
-        let completeMessage = "Copied " + this.toFileString(sourceFile) + " to " + this.toFileString(destination);
+        const completeMessage = `Copied ${this.toFileString(sourceFile)} to ${this.toFileString(destination)}`;
 
         return this.s3Promise.then(s3 => {
 
             return new Promise<AnyFile>((resolve, reject) => {
 
-                let skip = this.doSkip(sourceFile, destination, destinationList, options);
+                const skip = this.doSkip(sourceFile, destination, destinationList, options);
                 options = options || {};
 
                 if (!skip) {
                     if (sourceFile.bucket && destination.bucket) {
-                        //Scenario 1: s3 to s3
+                        // Scenario 1: s3 to s3
 
                         options.s3Params = options.s3Params || {};
 
-                        let copyObjectRequest = {
-                            CopySource: sourceFile.bucket + "/" + sourceFile.key,
+                        const copyObjectRequest = {
+                            CopySource: `${sourceFile.bucket}/${sourceFile.key}`,
                             Bucket: destination.bucket,
                             Key: destination.key,
                             ACL: options.makePublic ? "public-read" : null
                         };
 
                         Object.keys(options.s3Params).forEach(extraKey => {
-                            //console.log("Setting extra S3 params:", extraKey, "to", options.s3Params[extraKey]);
+                            // console.log("Setting extra S3 params:", extraKey, "to", options.s3Params[extraKey]);
                             copyObjectRequest[extraKey] = options.s3Params[extraKey];
                         });
 
@@ -908,19 +805,18 @@ export class FileService implements IFileService {
                         });
 
                     } else if (sourceFile.bucket && !destination.bucket) {
-                        //Scenario 2: s3 to local
+                        // Scenario 2: s3 to local
 
                         this.ensureDirectoryExistence(destination.key);
 
-                        let file = fs.createWriteStream(destination.key);
-                        let readStream = s3.getObject({Key: sourceFile.key, Bucket: sourceFile.bucket})
+                        const file = fs.createWriteStream(destination.key);
+                        const readStream = s3.getObject({Key: sourceFile.key, Bucket: sourceFile.bucket})
                             .createReadStream();
 
                         file.on("error", (err) => {
                             console.log(err);
                             reject(err);
                         });
-
 
                         file.on("close", (ex) => {
                             console.log(completeMessage);
@@ -929,11 +825,10 @@ export class FileService implements IFileService {
 
                         readStream.pipe(file);
 
-
                     } else if (!sourceFile.bucket && destination.bucket) {
-                        //Scenario 3: local to s3
+                        // Scenario 3: local to s3
 
-                        let body = fs.createReadStream(sourceFile.key);
+                        const body = fs.createReadStream(sourceFile.key);
 
                         this.doWriteToS3(body, destination, options).then((dest) => {
 
@@ -946,16 +841,16 @@ export class FileService implements IFileService {
 
                     } else if (!sourceFile.bucket && !destination.bucket) {
 
-                        //Scenario 4: local to local
+                        // Scenario 4: local to local
 
                         this.ensureDirectoryExistence(destination.key);
 
-                        let rd = fs.createReadStream(sourceFile.key);
+                        const rd = fs.createReadStream(sourceFile.key);
                         rd.on("error", (err) => {
                             console.log(err);
                             reject(err);
                         });
-                        let wr = fs.createWriteStream(destination.key);
+                        const wr = fs.createWriteStream(destination.key);
 
                         wr.on("error", (err) => {
                             console.log(err);
@@ -970,31 +865,24 @@ export class FileService implements IFileService {
 
                     }
 
-
                 } else {
 
                     console.log("Skipping existing file: ", this.toFileString(destination));
                     resolve(destination);
                 }
 
-
             });
-
-
-
 
         });
 
-
     }
 
-    findDestinationFiles(options:WriteOptions, destinationDir:AnyFile):Promise<ScannedFile[]> {
-
+    findDestinationFiles(options: WriteOptions, destinationDir: AnyFile): Promise<ScannedFile[]> {
 
         if (options.overwrite && !options.skipSame) {
-            //Do not list files if overwriting and not skipping same files
+            // Do not list files if overwriting and not skipping same files
             return new Promise((resolve, reject) => {
-                resolve([])
+                resolve([]);
             });
 
         } else {
@@ -1005,65 +893,44 @@ export class FileService implements IFileService {
 
     }
 
+    async doDeleteFile(file: AnyFile): Promise<AnyFile> {
 
-    doDeleteFile(file:AnyFile):Promise<AnyFile> {
-
-        let completeMessage = "Deleted file " + this.toFileString(file);
+        const completeMessage = `Deleted file ${this.toFileString(file)}`;
 
         if (file.bucket) {
-            //Delete S3
+            // Delete S3
 
-            return this.s3Promise.then(s3 => {
-
-                return s3.deleteObject({Bucket: file.bucket, Key: file.key}).promise().then(data => {
-
-                    console.log(completeMessage);
-                    return file;
-
-                });
-
-            });
-
+            const s3 = await this.s3Promise;
+            await s3.deleteObject({Bucket: file.bucket, Key: file.key}).promise();
+            console.log(completeMessage);
 
         } else {
-            //Delete local file
-
-
-            return this.promisify(fs.unlink, file.key).then(() => {
-                console.log(completeMessage);
-                return file;
-
-            });
-
-
+            // Delete local file
+            unlinkSync(file.key);
         }
 
+        return file;
 
     }
-
 
     /**
      * Delete all files in the folder
      * @param file
      * @param parallel
      */
-    deleteAll(file:AnyFile, parallel?:boolean):Promise<AnyFile[]> {
-
+    deleteAll(file: AnyFile, parallel?: boolean): Promise<AnyFile[]> {
 
         return this.list(file).then(files => {
 
             // console.log("Deleting files", JSON.stringify(files));
-            let processor = (inputFile:AnyFile) => {
+            const processor = (inputFile: AnyFile) => {
                 return this.doDeleteFile(inputFile);
             };
 
             return this.process(files, processor, parallel);
 
-
-
         });
     }
-
 
     /**
      * Copy all file/s from one location to another
@@ -1072,11 +939,11 @@ export class FileService implements IFileService {
      * @param destination {object} - The destination file or directory
      * @param options {object} - The optional set of write parameters
      */
-    copy(source:AnyFile, destination:AnyFile, options?:WriteOptions):Promise<ScannedFile[]> {
+    copy(source: AnyFile, destination: AnyFile, options?: WriteOptions): Promise<ScannedFile[]> {
 
         options = options || {makePublic: false, parallel: false, overwrite: false, skipSame: true};
 
-        //Fix file paths if they are local
+        // Fix file paths if they are local
         if (!source.bucket) {
             source.key = path.resolve(source.key);
         }
@@ -1085,24 +952,23 @@ export class FileService implements IFileService {
             destination.key = path.resolve(destination.key);
         }
 
-
-        //Recursively list all the source files
+        // Recursively list all the source files
         return this.list(source).then(sourceFiles => {
 
             return this.findDestinationFiles(options, destination).then(destinationFiles => {
 
-                let sourceFolderPath = source.key;
-                let destinationFolderPath = destination.key;
+                const sourceFolderPath = source.key;
+                const destinationFolderPath = destination.key;
 
-                let processor = (inputFile:ScannedFile) => {
+                const processor = (inputFile: ScannedFile) => {
 
-                    let destinationKey = inputFile.key.replace(sourceFolderPath, destinationFolderPath);
-                    let destinationFile:ScannedFile = {
+                    const destinationKey = inputFile.key.replace(sourceFolderPath, destinationFolderPath);
+                    let destinationFile: ScannedFile = {
                         bucket: destination.bucket,
                         key: destinationKey,
                         md5: inputFile.md5,
                         size: inputFile.size,
-                        mimeType: mime.lookup(destinationKey)
+                        mimeType: getType(destinationKey)
                     };
 
                     destinationFile = this.fixFile(destinationFile);
@@ -1111,16 +977,15 @@ export class FileService implements IFileService {
 
                 };
 
-                return this.process(sourceFiles, processor, options.parallel);
+                return this.process(sourceFiles, processor, options.parallel) as Promise<ScannedFile[]>;
 
             });
 
         });
 
-
     }
 
-    toFileString(file:AnyFile):string {
+    toFileString(file: AnyFile): string {
 
         return (file.bucket || "") + "/" + file.key;
     }
@@ -1131,7 +996,7 @@ export class FileService implements IFileService {
      * @param file {object} - The destination file to write
      * @param options {object} - The optional set of write parameters
      */
-    write(body:string | fs.ReadStream, file:AnyFile, options?:WriteOptions):Promise<ScannedFile> {
+    write(body: string | fs.ReadStream, file: AnyFile, options?: WriteOptions): Promise<ScannedFile> {
         options = options || {makePublic: false, parallel: false, overwrite: true, skipSame: true};
 
         return this.isFile(file).then(isFile => {
@@ -1149,12 +1014,9 @@ export class FileService implements IFileService {
 
                 } else {
 
+                    // console.log("Writing string to", file.key);
 
-
-
-                    //console.log("Writing string to", file.key);
-
-                    return new Promise((resolve, reject) => {
+                    return new Promise<ScannedFile>((resolve, reject) => {
 
                         try {
 
@@ -1171,9 +1033,9 @@ export class FileService implements IFileService {
                                     this.scanFile(file).then(scannedFile => {
                                         resolve(scannedFile);
 
-                                    }, err => {
+                                    }, error => {
 
-                                        reject(err);
+                                        reject(error);
                                     });
 
                                 }
@@ -1186,15 +1048,12 @@ export class FileService implements IFileService {
 
                     });
 
-
                 }
-
 
             }
 
         });
 
     }
-
 
 }

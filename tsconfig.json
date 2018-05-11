@@ -8,15 +8,13 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "lib": [
-      "es6",
+      "es7",
       "dom"
-    ],
-    "types": [
-      "mocha"
     ]
   },
   "exclude": [
     "node_modules",
+    "src/*.spec.ts",
     "dist"
   ]
 }

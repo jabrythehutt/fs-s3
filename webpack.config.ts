@@ -1,30 +1,39 @@
-"use strict";
 /**
  * Created by djabry on 04/06/2016.
  */
 /**
  * Created by djabry on 10/05/2016.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-var path_1 = require("path");
-exports.default = {
+
+import * as webpack from "webpack";
+import {resolve as resolvePath} from "path";
+import * as CleanWebpackPlugin from "clean-webpack-plugin";
+
+const distDir = resolvePath(__dirname, "dist");
+export default {
+
     mode: "production",
-    entry: path_1.resolve(__dirname, "fs-s3-standalone.ts"),
+    entry: resolvePath(__dirname, "fs-s3-standalone.ts"),
+
     output: {
-        path: path_1.resolve(__dirname, "dist"),
+        path: distDir,
         filename: "fs-s3-standalone.min.js",
         libraryTarget: "var",
         library: "fss3"
     },
+
     devtool: "source-map",
+
     resolve: {
         extensions: [".webpack.js", ".web.js", ".ts", ".js", ".json"]
     },
+
     externals: {
         // require("jquery") is external and available
         //  on the global var jQuery
         "aws-sdk": "AWS"
     },
+
     module: {
         rules: [
             {
@@ -44,6 +53,8 @@ exports.default = {
     node: {
         fs: "empty"
     },
-    plugins: []
+
+    plugins: [
+        new CleanWebpackPlugin([distDir])
+    ]
 };
-//# sourceMappingURL=webpack.config.js.map
