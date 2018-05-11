@@ -22,7 +22,7 @@ const testFilePath = resolvePath(__dirname, "..", "test", "test-file.txt");
 let s3rver;
 const testDir = resolvePath(tmpdir(), `s3rver${new Date().getTime()}`);
 
-describe("Test File Service", function() {
+describe("File Service", function() {
     this.timeout(10000);
 
     before(async () => {
