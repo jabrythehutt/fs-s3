@@ -20,7 +20,7 @@ export interface IFileService {
      * Write data to a file
      * @param body {string | fs.ReadStream} - The data to write
      * @param file {AnyFile} - The destination file to write
-     * @param options {WriteOptions} - The optional set of write parameters
+     * @param [options] {WriteOptions} - The optional set of write parameters
      */
     write(body: string | fs.ReadStream, file: AnyFile, options?: WriteOptions): Promise<ScannedFile>;
 
@@ -29,7 +29,7 @@ export interface IFileService {
      *
      * @param source {AnyFile} - The source file or directory
      * @param destination {AnyFile} - The destination file or directory
-     * @param options {WriteOptions} - The optional set of write parameters
+     * @param [options] {WriteOptions} - The optional set of write parameters
      */
     copy(source: AnyFile, destination: AnyFile, options?: WriteOptions): Promise<ScannedFile[]>;
 
@@ -48,7 +48,7 @@ export interface IFileService {
     /**
      * Delete all files in the folder
      * @param file {AnyFile} - The file or directory to delete
-     * @param parallel {boolean} - Whether to delete files in parallel
+     * @param [parallel] {boolean} - Whether to delete files in parallel
      */
     deleteAll(file: AnyFile, parallel?: boolean): Promise<AnyFile[]>;
 
@@ -68,7 +68,7 @@ export interface IFileService {
      * Upload files in the browser
      * @param files {FileList} - The file list to upload
      * @param destinationFolder {AnyFile} - The destination folder
-     * @param writeOptions {WriteOptions} - The write options to use when writing the files
+     * @param [writeOptions] {WriteOptions} - The write options to use when writing the files
      */
     uploadFiles(files: FileList, destinationFolder: AnyFile, writeOptions?: WriteOptions): Promise<ScannedFile[]>;
 
@@ -83,7 +83,7 @@ export interface IFileService {
      *  Upload a single file from the browser
      * @param file {File} - The file to upload
      * @param destination {AnyFile} - The destination to upload the file to
-     * @param writeOptions {AnyFile} - The options to use when writing the file
+     * @param [writeOptions] {AnyFile} - The options to use when writing the file
      */
     uploadFile(file: File, destination: AnyFile, writeOptions?: WriteOptions): Promise<ScannedFile>;
 
