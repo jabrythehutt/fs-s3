@@ -242,7 +242,7 @@ export class FileService implements IFileService {
      * @param parameters.destinationFolder
      * @param parameters.options
      */
-    uploadFiles(parameters): Promise<ScannedFile[]> {
+    async uploadFiles(parameters): Promise<ScannedFile[]> {
         const inputList = parameters.inputList;
         const destinationFolder = parameters.destinationFolder;
         let options = parameters.options;
@@ -258,23 +258,20 @@ export class FileService implements IFileService {
 
         }
 
-        return this.findDestinationFiles(options, destinationFolder).then(destinationFiles => {
+        const destinationFiles = await this.findDestinationFiles(options, destinationFolder);
+        const processor = (inputFile: File) => {
+            const key = `${destinationFolder.key}/${inputFile.name}`;
 
-            const processor = (inputFile: File) => {
-                const key = `${destinationFolder.key}/${inputFile.name}`;
-
-                const destinationFile: AnyFile = {
-                    bucket: destinationFolder.bucket,
-                    key
-                };
-
-                return this.uploadFile(inputFile, destinationFile, options, destinationFiles);
-
+            const destinationFile: AnyFile = {
+                bucket: destinationFolder.bucket,
+                key
             };
 
-            return this.process(sourceFiles, processor, options.parallel);
+            return this.uploadFile(inputFile, destinationFile, options, destinationFiles);
 
-        });
+        };
+
+        return this.process(sourceFiles, processor, options.parallel);
 
     }
 
@@ -301,22 +298,18 @@ export class FileService implements IFileService {
      * Checks if it exists and is a file
      * @param file
      */
-    isFile(file: AnyFile): Promise<ScannedFile> {
+    async isFile(file: AnyFile): Promise<ScannedFile> {
 
-        return this.list(file).then(files => {
+        const files = await this.list(file);
+        if (files.length) {
+            return files.find(f => {
+                return f.key === file.key;
+            });
 
-            if (files.length) {
+        } else {
 
-                return files.find(f => {
-
-                    return f.key === file.key;
-                });
-
-            } else {
-
-                return null;
-            }
-        });
+            return null;
+        }
     }
 
     readBlob(blob: Blob): Promise<string> {
