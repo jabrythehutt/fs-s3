@@ -3,9 +3,6 @@ import {WriteOptions} from "./write-options";
 import {ScannedFile} from "./scanned-file";
 import * as fs from "fs";
 
-/**
- * Created by djabry on 15/06/2016.
- */
 export interface IFileService {
 
     // readLines(file: AnyFile, startByte?: number, endByte?: number): Promise<LineReader>;

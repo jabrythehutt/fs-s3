@@ -1,7 +1,5 @@
 import {ProgressListener} from "./progress-listener";
-/**
- * Created by djabry on 15/06/2016.
- */
+
 
 export interface WriteOptions {
     skipSame?: boolean; // Skip writing files with the same md5 hash

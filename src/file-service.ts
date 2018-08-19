@@ -1,6 +1,3 @@
-/**
- * Created by djabry on 04/06/2016.
- */
 import {getType} from "mime";
 import {
     createReadStream,
@@ -18,16 +15,13 @@ import {IFileService} from "./ifile-service";
 import {ScannedFile} from "./scanned-file";
 import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
-import {log} from "winston";
 import * as S3 from "aws-sdk/clients/s3";
 import {dirname, resolve as resolvePath} from "path";
-
-/**
- * Created by djabry on 17/05/2016.
- */
+import {createLogger, format, Logger, transports} from "winston";
 
 export class FileService implements IFileService {
 
+    logger: Logger;
     private s3Promise: Promise<S3>;
 
     /**
@@ -35,6 +29,13 @@ export class FileService implements IFileService {
      * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
      */
     constructor(s3: S3 | Promise<S3>) {
+        this.logger = createLogger({
+            transports: [
+                new transports.Console({
+                    format: format.simple()
+                })
+            ]
+        });
 
         if (typeof s3["then"] === "function") {
 
@@ -181,7 +182,7 @@ export class FileService implements IFileService {
 
         }
         await request.promise();
-        log("debug", completeMessage);
+        this.logger.debug(completeMessage);
         return this.scanFile(destination);
     }
 
@@ -324,7 +325,7 @@ export class FileService implements IFileService {
 
             reader.onerror = (err) => {
 
-                log("error", err.toString());
+                this.logger.error(err.toString());
                 reject(err);
             };
 
@@ -375,14 +376,14 @@ export class FileService implements IFileService {
             });
 
             stream.on("error", (err) => {
-                log("error", err);
+                this.logger.error(err);
                 reject(err);
             });
 
             stream.on("end", () => {
 
                 const result = hash.digest("hex"); // e.g. 34f7a3113803f8ed3b8fd7ce5656ebec
-                // log("debug", "Completed md5 calculation: ", result);
+                // this.logger.debug( "Completed md5 calculation: ", result);
                 resolve(result);
 
             });
@@ -423,7 +424,7 @@ export class FileService implements IFileService {
 
     calculateLocalMD5(localPath: string): Promise<string> {
         // Once the file has been downloaded, calculate the checksum
-        // log("debug", "Starting md5 calculation");
+        // this.logger.debug( "Starting md5 calculation");
 
         const stream: ReadStream = createReadStream(localPath);
         return this.calculateStreamMD5(stream);
@@ -583,7 +584,7 @@ export class FileService implements IFileService {
 
         } catch (err) {
 
-            log("debug", err);
+            this.logger.debug( err);
 
             return new Promise((resolve, reject) => {
                 reject(err);
@@ -598,7 +599,6 @@ export class FileService implements IFileService {
      * @param file {AnyFile}
      */
     list(file: AnyFile): Promise<ScannedFile[]> {
-        // log("debug", "Listing files", JSON.stringify(file));
         file = this.fixFile(file);
 
         if (file.bucket) {
@@ -667,7 +667,7 @@ export class FileService implements IFileService {
                 };
 
                 await s3.copyObject(copyObjectRequest).promise();
-                log("debug", completeMessage);
+                this.logger.debug( completeMessage);
 
             } else if (sourceFile.bucket && !destination.bucket) {
                 // Scenario 2: s3 to local
@@ -677,12 +677,12 @@ export class FileService implements IFileService {
                     .createReadStream();
                 return new Promise<AnyFile>((resolve, reject) => {
                     file.on("error", (err) => {
-                        log("debug", err);
+                        this.logger.error( err);
                         reject(err);
                     });
 
                     file.on("close", (ex) => {
-                        log("debug", completeMessage);
+                        this.logger.debug( completeMessage);
                         resolve(destination);
                     });
                     readStream.pipe(file);
@@ -702,17 +702,17 @@ export class FileService implements IFileService {
 
                 return new Promise<AnyFile>((resolve, reject) => {
                     rd.on("error", (err) => {
-                        log("debug", err);
+                        this.logger.error(err);
                         reject(err);
                     });
                     const wr = createWriteStream(destination.key);
 
                     wr.on("error", (err) => {
-                        log("debug", err);
+                        this.logger.error(err);
                         reject(err);
                     });
                     wr.on("close", (ex) => {
-                        log("debug", completeMessage);
+                        this.logger.debug( completeMessage);
                         resolve(destination);
                     });
                     rd.pipe(wr);
@@ -722,7 +722,7 @@ export class FileService implements IFileService {
 
         } else {
 
-            log("debug", "Skipping existing file: ", this.toFileString(destination));
+            this.logger.debug( "Skipping existing file: ", this.toFileString(destination));
             return destination;
         }
 
@@ -753,7 +753,7 @@ export class FileService implements IFileService {
 
             const s3 = await this.s3Promise;
             await s3.deleteObject({Bucket: file.bucket, Key: file.key}).promise();
-            log("debug", completeMessage);
+            this.logger.debug( completeMessage);
 
         } else {
             // Delete local file
@@ -841,7 +841,7 @@ export class FileService implements IFileService {
         const isFile = await this.isFile(file);
         if (!options.overwrite && isFile) {
 
-            log("debug", "Skipping writing existing file", this.toFileString(isFile));
+            this.logger.debug( "Skipping writing existing file", this.toFileString(isFile));
             return isFile;
 
         } else {
