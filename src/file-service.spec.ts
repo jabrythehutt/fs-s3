@@ -1,10 +1,3 @@
-/**
- * Created by djabry on 04/06/2016.
- */
-/**
- * Created by djabry on 03/05/2016.
- */
-import {S3} from "aws-sdk";
 import {FileService} from "./file-service";
 import * as assert from "assert";
 import * as fs from "fs";
@@ -13,6 +6,7 @@ import {resolve as resolvePath} from "path";
 import * as S3rver from "s3rver";
 import {tmpdir} from "os";
 import * as del from "del";
+import * as S3 from "aws-sdk/clients/s3";
 
 let s3: S3;
 let fileService: FileService;

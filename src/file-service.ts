@@ -22,7 +22,7 @@ import {createLogger, format, Logger, transports} from "winston";
 export class FileService implements IFileService {
 
     logger: Logger;
-    private s3Promise: Promise<S3>;
+    s3Promise: Promise<S3>;
 
     /**
      *
@@ -38,13 +38,9 @@ export class FileService implements IFileService {
         });
 
         if (typeof s3["then"] === "function") {
-
             this.s3Promise = s3 as Promise<S3>;
-
         } else {
-
             this.s3Promise = Promise.resolve(s3);
-
         }
 
     }
@@ -123,13 +119,10 @@ export class FileService implements IFileService {
         if (!file.bucket) {
             // Local wait is not supported yet
             throw new Error("Local waiting is not supported yet");
-
         } else {
-
             const s3 = await this.s3Promise;
             await s3.waitFor("objectExists", {Bucket: file.bucket, Key: file.key}).promise();
             return this.isFile(file);
-
         }
     }
 
@@ -247,9 +240,7 @@ export class FileService implements IFileService {
         const inputList = parameters.inputList;
         const destinationFolder = parameters.destinationFolder;
         let options = parameters.options;
-
         options = options || {makePublic: false, parallel: false, overwrite: false, skipSame: true};
-
         const sourceFiles = [];
         // Arrange input files into a regular array
         for (let ix = 0; ix < inputList.length; ix++) {
