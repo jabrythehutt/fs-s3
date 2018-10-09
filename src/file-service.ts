@@ -17,26 +17,18 @@ import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
 import * as S3 from "aws-sdk/clients/s3";
 import {dirname, resolve as resolvePath} from "path";
-import {createLogger, format, Logger, transports} from "winston";
+import {NoOpLogger} from "./no.op.logger";
+import {Logger} from "./logger";
 
 export class FileService implements IFileService {
-
-    logger: Logger;
     s3Promise: Promise<S3>;
 
     /**
      *
      * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
+     * @param [logger] - Optional logger to use
      */
-    constructor(s3: S3 | Promise<S3>) {
-        this.logger = createLogger({
-            transports: [
-                new transports.Console({
-                    format: format.simple()
-                })
-            ]
-        });
-
+    constructor(s3: S3 | Promise<S3>, public logger: Logger = new NoOpLogger()) {
         if (typeof s3["then"] === "function") {
             this.s3Promise = s3 as Promise<S3>;
         } else {
@@ -658,7 +650,7 @@ export class FileService implements IFileService {
                 };
 
                 await s3.copyObject(copyObjectRequest).promise();
-                this.logger.debug( completeMessage);
+                this.logger.debug(completeMessage);
 
             } else if (sourceFile.bucket && !destination.bucket) {
                 // Scenario 2: s3 to local
@@ -673,7 +665,7 @@ export class FileService implements IFileService {
                     });
 
                     file.on("close", (ex) => {
-                        this.logger.debug( completeMessage);
+                        this.logger.debug(completeMessage);
                         resolve(destination);
                     });
                     readStream.pipe(file);
@@ -703,7 +695,7 @@ export class FileService implements IFileService {
                         reject(err);
                     });
                     wr.on("close", (ex) => {
-                        this.logger.debug( completeMessage);
+                        this.logger.debug(completeMessage);
                         resolve(destination);
                     });
                     rd.pipe(wr);
@@ -713,7 +705,7 @@ export class FileService implements IFileService {
 
         } else {
 
-            this.logger.debug( "Skipping existing file: ", this.toFileString(destination));
+            this.logger.debug( `Skipping existing file: ${this.toFileString(destination)}`);
             return destination;
         }
 
@@ -744,7 +736,7 @@ export class FileService implements IFileService {
 
             const s3 = await this.s3Promise;
             await s3.deleteObject({Bucket: file.bucket, Key: file.key}).promise();
-            this.logger.debug( completeMessage);
+            this.logger.debug(completeMessage);
 
         } else {
             // Delete local file
@@ -832,7 +824,7 @@ export class FileService implements IFileService {
         const isFile = await this.isFile(file);
         if (!options.overwrite && isFile) {
 
-            this.logger.debug( "Skipping writing existing file", this.toFileString(isFile));
+            this.logger.debug( `Skipping writing existing file: ${this.toFileString(isFile)}`);
             return isFile;
 
         } else {

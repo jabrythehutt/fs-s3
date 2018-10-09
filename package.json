@@ -43,7 +43,6 @@
     "webpack-cli": "3.1.0"
   },
   "dependencies": {
-    "mime": "2.3.1",
-    "winston": "3.0.0"
+    "mime": "2.3.1"
   }
 }
