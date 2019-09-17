@@ -8,13 +8,15 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "lib": [
-      "es7",
+      "es2018",
       "dom"
-    ]
+    ],
+    "outDir": "lib"
   },
+  "include": [
+    "src"
+  ],
   "exclude": [
-    "node_modules",
-    "src/*.spec.ts",
-    "dist"
+    "**/*.spec.ts"
   ]
 }

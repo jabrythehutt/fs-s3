@@ -90,3 +90,4 @@ typings
 !custom-typings.d.ts
 
 dist
+lib

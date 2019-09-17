@@ -298,11 +298,11 @@ export class FileService implements IFileService {
 
     readBlob(blob: Blob): Promise<string> {
 
-        return new Promise((resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
 
             const reader = new FileReader();
             reader.onload = (evt) => {
-                const rangeString = evt.target["result"];
+                const rangeString = (evt.target as any).result;
                 resolve(rangeString);
             };
 

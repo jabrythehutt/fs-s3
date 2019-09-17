@@ -41,7 +41,7 @@ If you like promises then this could be yet another S3 wrapper for you.
 
  ```javascript
    //Create a new S3 object
-   var s3 = new AWS.S3({region:"eu-west-1"});
+   var s3 = new AWS.S3({region: "eu-west-1"});
        
    //The file service takes the S3 object as the argument constructor
    var fileService = new fss3.FileService(s3);

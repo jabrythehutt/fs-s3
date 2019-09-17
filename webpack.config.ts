@@ -1,19 +1,11 @@
-/**
- * Created by djabry on 04/06/2016.
- */
-/**
- * Created by djabry on 10/05/2016.
- */
-
-import * as webpack from "webpack";
 import {resolve as resolvePath} from "path";
-import * as CleanWebpackPlugin from "clean-webpack-plugin";
+import {CleanWebpackPlugin} from "clean-webpack-plugin";
 
 const distDir = resolvePath(__dirname, "dist");
 export default {
 
     mode: "production",
-    entry: resolvePath(__dirname, "fs-s3-standalone.ts"),
+    entry: resolvePath(__dirname, "src", "fs-s3-standalone.ts"),
 
     output: {
         path: distDir,
@@ -55,6 +47,6 @@ export default {
     },
 
     plugins: [
-        new CleanWebpackPlugin([distDir])
+        new (CleanWebpackPlugin as any)()
     ]
 };
