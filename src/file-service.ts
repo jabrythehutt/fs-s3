@@ -15,7 +15,7 @@ import {IFileService} from "./ifile-service";
 import {ScannedFile} from "./scanned-file";
 import {AnyFile} from "./any-file";
 import {WriteOptions} from "./write-options";
-import * as S3 from "aws-sdk/clients/s3";
+import S3 from "aws-sdk/clients/s3";
 import {dirname, resolve as resolvePath} from "path";
 import {NoOpLogger} from "./no.op.logger";
 import {Logger} from "./logger";
@@ -70,7 +70,7 @@ export class FileService implements IFileService {
         if (parallel) {
 
             // Process all in parallel
-            const outputPromises: Array<Promise<B>> = inputElements.map(inputElement => {
+            const outputPromises: Promise<B>[] = inputElements.map(inputElement => {
                 return processor(inputElement);
             });
 
@@ -500,7 +500,8 @@ export class FileService implements IFileService {
             items.push(...data.Contents.map(item => this.toScannedFile(bucket, item)));
         }
 
-        return items.filter((item, index, arr) => !this.isContainingFolder(item, arr));
+        return items.filter((item, index, arr) =>
+            !item.key.endsWith("/") && !this.isContainingFolder(item, arr));
 
     }
 
