@@ -88,6 +88,7 @@ typings
 **/*.map
 **/*.d.ts
 !custom-typings.d.ts
+.nyc_output
 
 dist
 lib
