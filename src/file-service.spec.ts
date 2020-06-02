@@ -11,7 +11,6 @@ import {AnyFile} from "./any-file";
 import {expect} from "chai";
 import {mkdtempSync} from "fs";
 import {ScannedFile} from "./scanned-file";
-import {getType} from "mime";
 
 let s3: S3;
 let fileService: FileService;
@@ -139,7 +138,7 @@ describe("File Service", function() {
             await s3.upload({
                 Bucket: testBucket,
                 Key: `${folderKey}/`,
-                Body: ""
+                Body: "foo"
             }).promise();
 
             for (const content of testFileContent) {
@@ -147,7 +146,6 @@ describe("File Service", function() {
                 await s3.upload({
                     Bucket: testBucket,
                     Body: content,
-                    ContentType: getType(key),
                     Key: key
                 }).promise();
             }
@@ -155,16 +153,16 @@ describe("File Service", function() {
 
         it("Downloads the content of the S3 folder to a local folder", async () => {
 
+            const allRemoteFiles = await fileService.list(remoteFolder);
             await fileService.copy(remoteFolder, localFolder);
 
-            const allRemoteFiles = await fileService.list(remoteFolder);
             const allLocalFiles = await fileService.list(localFolder);
 
             const numberOfDownloadedFiles = allLocalFiles.length;
             expect(numberOfDownloadedFiles).to.be.greaterThan(1, "Should have downloaded more than one file");
 
             interface FileInfo {
-                hash: string,
+                hash: string;
                 size: number;
                 fileName: string;
             }
