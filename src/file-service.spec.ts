@@ -1,51 +1,50 @@
 import {FileService} from "./file-service";
-import * as assert from "assert";
-import * as fs from "fs";
-import * as path from "path";
 import {basename, join, resolve as resolvePath} from "path";
-import * as S3rver from "s3rver";
+import S3rver from "s3rver";
 import {tmpdir} from "os";
-import * as del from "del";
-import * as S3 from "aws-sdk/clients/s3";
+import del from "del";
+import S3 from "aws-sdk/clients/s3";
 import {AnyFile} from "./any-file";
 import {expect} from "chai";
-import {mkdtempSync} from "fs";
+import {mkdtempSync, readFileSync} from "fs";
 import {ScannedFile} from "./scanned-file";
+import axios from "axios";
+import {Credentials} from "aws-sdk";
 
-let s3: S3;
-let fileService: FileService;
-const testBucket = "foo";
-const testFileText = "This is a test file";
-const testFilePath = resolvePath(__dirname, "..", "test", "test-file.txt");
-let s3rver;
-const testDir = resolvePath(tmpdir(), `s3rver${new Date().getTime()}`);
 
 describe("File Service", function() {
+
+    let s3: S3;
+    let instance: FileService;
+    let testBucket: string;
+    let testFileText: string;
+    let testFilePath: string;
+    let s3rver: S3rver;
+    let testDir: string;
+
+
     this.timeout(10000);
 
     before(async () => {
-        await new Promise((resolve, reject) => {
-
-            s3rver = new S3rver({
-                port: 4569,
-                hostname: "localhost",
-                silent: false,
-                directory: testDir
-            }).run((err, host, port) => {
-                const endpoint = `http://${host}:${port}`;
-
-                s3 = new S3({
-                    accessKeyId: "foo",
-                    secretAccessKey: "bar",
-                    endpoint,
-                    sslEnabled: false,
-                    s3ForcePathStyle: true
-                });
-                if (err) {
-                    reject(err);
-                }
-                resolve();
-            });
+        testBucket = "foo";
+        testFileText = "This is a test file";
+        testFilePath = resolvePath(__dirname, "..", "test", "test-file.txt");
+        testDir = mkdtempSync(join(tmpdir(), "s3rver-")).toString();
+        const hostname = "localhost";
+        const port = 4569;
+        s3rver = new S3rver({
+            port,
+            address: hostname,
+            silent: true,
+            directory: testDir
+        });
+        await s3rver.run();
+        const endpoint = `http://${hostname}:${port}`;
+        s3 = new S3({
+            credentials: new Credentials("S3RVER", "S3RVER"),
+            endpoint,
+            sslEnabled: false,
+            s3ForcePathStyle: true
         });
 
         await s3.createBucket({
@@ -55,60 +54,32 @@ describe("File Service", function() {
     });
 
     beforeEach(async () => {
-
-        fileService = new FileService(s3);
+        instance = new FileService(s3);
     });
 
-    it("Should get a link for a remote file", done => {
-        fileService.write(testFileText,
-            {bucket: testBucket, key: "foo.txt"},
-            {overwrite: true, skipSame: false}).then((resultFile) => {
-
-            fileService.getReadURL(resultFile).then(link => {
-
-                assert(link, "No link returned for file");
-
-                done();
-            });
-
-        });
+    it("Gets a link for a remote file", async () => {
+        const resultFile = await instance.write(testFileText, {bucket: testBucket, key: "foo.txt"});
+        const link = await instance.getReadURL(resultFile);
+        const response = await axios.get(link);
+        expect(response.data.toString()).to.equal(testFileText,
+            "Didn't receive the expected file content when downloading data from the link")
     });
 
-    it("Should write a local file", (done) => {
-
-        fileService.write(testFileText, {key: testFilePath}, {overwrite: true, skipSame: false}).then(() => {
-
-            // Read the local file to see if it's actually been written
-            const fileText = fs.readFileSync(path.resolve(testFilePath)).toString();
-
-            assert(fileText === testFileText, "Wrong text found in file");
-
-            done();
-        }, err => {
-
-            assert(!err, err);
-            done(err);
-        });
+    it("Writes a local file", async () => {
+        await instance.write(testFileText, {key: testFilePath}, {overwrite: true, skipSame: false});
+        const fileText = readFileSync(testFilePath).toString();
+        expect(fileText).to.equal(testFileText);
     });
 
-    it("Should write an S3 file", (done) => {
+    it("Writes an S3 file", async () => {
         const s3Destination = "bar.txt";
-        fileService.write(testFileText, {bucket: testBucket, key: s3Destination}, {overwrite: true, skipSame: false})
-            .then(() => {
-
-                s3.getObject({Key: s3Destination, Bucket: testBucket}).promise().then(fileObject => {
-
-                    assert(fileObject.Body.toString() === testFileText, "Wrong text found in file");
-
-                    done();
-                });
-
-            }, err => {
-
-                assert(!err, err);
-                done(err);
-            });
-
+        const file = {bucket: testBucket, key: s3Destination};
+        await instance.write(testFileText, file, {overwrite: true, skipSame: false})
+        const fileObject = await s3.getObject({
+            Bucket: file.bucket,
+            Key: file.key
+        }).promise();
+        expect(fileObject.Body.toString()).to.equal(testFileText, "Wrong text found in file");
     });
 
     describe("An S3 folder containing some files", () => {
@@ -153,10 +124,10 @@ describe("File Service", function() {
 
         it("Downloads the content of the S3 folder to a local folder", async () => {
 
-            const allRemoteFiles = await fileService.list(remoteFolder);
-            await fileService.copy(remoteFolder, localFolder);
+            const allRemoteFiles = await instance.list(remoteFolder);
+            await instance.copy(remoteFolder, localFolder);
 
-            const allLocalFiles = await fileService.list(localFolder);
+            const allLocalFiles = await instance.list(localFolder);
 
             const numberOfDownloadedFiles = allLocalFiles.length;
             expect(numberOfDownloadedFiles).to.be.greaterThan(1, "Should have downloaded more than one file");
@@ -181,21 +152,13 @@ describe("File Service", function() {
 
         afterEach("Remove the test files", async () => {
             await Promise.all([localFolder, remoteFolder]
-                .map(f => fileService.deleteAll(f)));
+                .map(f => instance.deleteAll(f)));
         });
     });
 
     after(async () => {
 
-        await new Promise((resolve, reject) => {
-            s3rver.close(err => {
-                if (err) {
-                    reject(err);
-                }
-                resolve();
-            });
-        });
-
+        await s3rver.close();
         await del([testDir], {force: true});
 
     });
