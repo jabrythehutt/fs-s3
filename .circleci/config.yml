@@ -5,11 +5,16 @@ jobs:
       - image: circleci/openjdk:8-jdk-node
     steps:
       - checkout
+      # Set up the code climate reporter
+      - run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+      - run: chmod +x ./cc-test-reporter
+      - run: ./cc-test-reporter before-build
       - restore_cache: # restore the saved cache after the first run or if `package.json` has changed
-          key: fs-s3-{{ checksum "package.json" }}
-      - run: npm install
+          key: fs-s3-{{ checksum "package-lock.json" }}
+      - run: npm ci
       - save_cache: # saves the project dependencies
           paths:
             - node_modules
-          key: fs-s3-{{ checksum "package.json" }}
+          key: fs-s3-{{ checksum "package-lock.json" }}
       - run: npm run test
+      - run: ./cc-test-reporter after-build --exit-code $?
