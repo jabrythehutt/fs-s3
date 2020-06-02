@@ -11,6 +11,7 @@ import {AnyFile} from "./any-file";
 import {expect} from "chai";
 import {mkdtempSync} from "fs";
 import {ScannedFile} from "./scanned-file";
+import {getType} from "mime";
 
 let s3: S3;
 let fileService: FileService;
@@ -134,12 +135,21 @@ describe("File Service", function() {
                 key: folderKey
             };
 
+            // Create an S3 'folder'
+            await s3.upload({
+                Bucket: testBucket,
+                Key: `${folderKey}/`,
+                Body: ""
+            }).promise();
+
             for (const content of testFileContent) {
-                const destination = {
-                    key: `${folderKey}/${content}.txt`,
-                    bucket: testBucket
-                }
-                await fileService.write(content, destination);
+                const key = `${folderKey}/${content}.txt`;
+                await s3.upload({
+                    Bucket: testBucket,
+                    Body: content,
+                    ContentType: getType(key),
+                    Key: key
+                }).promise();
             }
         });
 
