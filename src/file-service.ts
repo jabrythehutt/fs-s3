@@ -499,7 +499,8 @@ export class FileService implements IFileService {
             data = await s3.listObjectsV2(listRequest).promise();
             items.push(...data.Contents.map(item => this.toScannedFile(bucket, item)));
         }
-        return items;
+
+        return items.filter((item, index, arr) => !this.isContainingFolder(item, arr));
 
     }
 
@@ -843,6 +844,11 @@ export class FileService implements IFileService {
             }
 
         }
+    }
+
+    private isContainingFolder(file: ScannedFile, otherFiles: ScannedFile[]): boolean {
+        const folderPrefix = `${file.key}/`;
+        return !!otherFiles.find(f => f.key.startsWith(folderPrefix));
     }
 
 }
