@@ -2,11 +2,15 @@ import {FileService} from "./file-service";
 import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
-import {resolve as resolvePath} from "path";
+import {basename, join, resolve as resolvePath} from "path";
 import * as S3rver from "s3rver";
 import {tmpdir} from "os";
 import * as del from "del";
 import * as S3 from "aws-sdk/clients/s3";
+import {AnyFile} from "./any-file";
+import {expect} from "chai";
+import {mkdtempSync} from "fs";
+import {ScannedFile} from "./scanned-file";
 
 let s3: S3;
 let fileService: FileService;
@@ -105,6 +109,72 @@ describe("File Service", function() {
                 done(err);
             });
 
+    });
+
+    describe("An S3 folder containing some files", () => {
+
+        let remoteFolder: AnyFile;
+        let localFolder: AnyFile;
+
+        beforeEach("Write some test files to the S3 folder", async () => {
+            const folderKey = "test-folder-foo/bar/baz";
+            const localFolderKey = mkdtempSync(join(tmpdir(), "fss3-test-")).toString();
+            const testFileContent = [
+                "foo",
+                "bar",
+                "baz"
+            ];
+
+            localFolder = {
+                key: localFolderKey
+            };
+
+            remoteFolder = {
+                bucket: testBucket,
+                key: folderKey
+            };
+
+            for (const content of testFileContent) {
+                const destination = {
+                    key: `${folderKey}/${content}.txt`,
+                    bucket: testBucket
+                }
+                await fileService.write(content, destination);
+            }
+        });
+
+        it("Downloads the content of the S3 folder to a local folder", async () => {
+
+            await fileService.copy(remoteFolder, localFolder);
+
+            const allRemoteFiles = await fileService.list(remoteFolder);
+            const allLocalFiles = await fileService.list(localFolder);
+
+            const numberOfDownloadedFiles = allLocalFiles.length;
+            expect(numberOfDownloadedFiles).to.be.greaterThan(1, "Should have downloaded more than one file");
+
+            interface FileInfo {
+                hash: string,
+                size: number;
+                fileName: string;
+            }
+            const toFileInfo = (f: ScannedFile): FileInfo => ({
+                hash: f.md5,
+                size: f.size,
+                fileName: basename(f.key)
+            });
+
+            const fileInfoComparator = (a: FileInfo, b: FileInfo) => a.hash.localeCompare(b.hash);
+            const remoteFileInfo = allRemoteFiles.map(toFileInfo).sort(fileInfoComparator);
+            const downloadedFileInfo = allLocalFiles.map(toFileInfo).sort(fileInfoComparator);
+            expect(remoteFileInfo).to.deep.equal(downloadedFileInfo,
+                "The downloaded files need to have the same names and content")
+        });
+
+        afterEach("Remove the test files", async () => {
+            await Promise.all([localFolder, remoteFolder]
+                .map(f => fileService.deleteAll(f)));
+        });
     });
 
     after(async () => {
