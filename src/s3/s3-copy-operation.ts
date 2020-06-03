@@ -1,6 +1,4 @@
-import {S3File, ScannedS3File} from "../api";
+import {S3File} from "../api";
+import {CopyOperation} from "../api/copy-operation";
 
-export interface S3CopyOperation {
-    source: ScannedS3File;
-    destination: S3File;
-}
+export type S3CopyOperation = CopyOperation<S3File, S3File>;

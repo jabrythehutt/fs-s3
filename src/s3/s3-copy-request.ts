@@ -1,8 +1,3 @@
-import {WriteOptions} from "../api";
-import {S3File} from "../api";
+import {S3File, CopyRequest} from "../api";
 
-export interface S3CopyRequest {
-    source: S3File;
-    destination: S3File;
-    options: WriteOptions;
-}
+export type S3CopyRequest = CopyRequest<S3File>;

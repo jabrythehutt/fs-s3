@@ -1,14 +1,14 @@
 import S3, {
+    GetObjectOutput,
+    GetObjectRequest,
     HeadObjectOutput,
     ListObjectsV2Output,
     ListObjectsV2Request,
     PutObjectRequest
 } from "aws-sdk/clients/s3";
-import {Logger} from "../logger";
-import {NoOpLogger} from "../no.op.logger";
 import {getType} from "mime";
 import {S3CopyRequest} from "./s3-copy-request";
-import {AnyFile, S3File, ScannedS3File, WriteOptions} from "../api";
+import {S3File, ScannedS3File, WriteOptions} from "../api";
 import {defaultCopyOptions} from "./default-copy-options";
 import {defaultContentType} from "./default-content-type";
 import {ResolveDestinationRequest} from "./resolve-destination-request";
@@ -21,9 +21,8 @@ export class S3FileService {
     /**
      *
      * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
-     * @param [logger] - Optional logger to use
      */
-    constructor(s3: S3 | Promise<S3>, readonly logger: Logger = new NoOpLogger()) {
+    constructor(s3: S3 | Promise<S3>) {
         this.s3Promise = this.toPromise(s3);
     }
 
@@ -89,14 +88,15 @@ export class S3FileService {
             });
         }
         await request.promise();
-        const completeMessage = `Completed upload to ${this.toLocationString(destination)}`;
-        this.logger.debug(completeMessage);
         return this.scanS3File(destination);
     }
 
     async getReadURL(file: ScannedS3File, expires: number = 60 * 60 * 24): Promise<string> {
         const s3 = await this.s3Promise;
-        return s3.getSignedUrlPromise("getObject", {Bucket: file.bucket, Key: file.key, Expires: expires});
+        return s3.getSignedUrlPromise("getObject", {
+            ...this.toS3LocationParams(file),
+            Expires: expires
+        });
     }
 
     protected headResponseToFileInfo(file: S3File, response: HeadObjectOutput): ScannedS3File {
@@ -111,10 +111,7 @@ export class S3FileService {
     async scanS3File(file: S3File): Promise<ScannedS3File | undefined> {
         const s3 = await this.s3Promise;
         try {
-            const info = await s3.headObject({
-                Bucket: file.bucket,
-                Key: file.key
-            }).promise();
+            const info = await s3.headObject(this.toS3LocationParams(file)).promise();
             return this.headResponseToFileInfo(file, info);
         } catch (err) {
             if(err.code !== "NotFound") {
@@ -124,27 +121,26 @@ export class S3FileService {
 
     }
 
-    resolveDestination(request: ResolveDestinationRequest): S3File {
+    resolveDestination(request: ResolveDestinationRequest<S3File, S3File>): S3File {
         return {
             bucket: request.destinationFolder.bucket,
             key: request.source.key.replace(request.sourceFolder, request.destinationFolder.key)
         };
     }
 
-    toLocationString(input: AnyFile): string {
-        return `${input.bucket || ""}/${input.key}`;
+    toLocationString(input: S3File): string {
+        return `s3://${[input.bucket, input.key].join("/")}`;
     }
 
     async isValidS3CopyOperation(request: S3CopyOperation, options: WriteOptions): Promise<boolean> {
         // Skip the operation if it's the same location
-        if(this.toLocationString(request.source) === this.toLocationString(request.destination)) {
+        if (this.toLocationString(request.source) === this.toLocationString(request.destination)) {
             return false;
         }
         // Proceed if any destination files will always be overwritten
         if (options.overwrite && !options.skipSame) {
             return true;
         }
-
         const existingFile = await this.scanS3File(request.destination);
 
         if (!!existingFile && !options.overwrite) {
@@ -152,7 +148,6 @@ export class S3FileService {
         }
         const sameContent = !!existingFile && existingFile.md5 === request.source.md5;
         return !(sameContent && options.skipSame);
-
     }
 
     async copyS3Object(request: S3CopyOperation, options: WriteOptions): Promise<void> {
@@ -168,8 +163,7 @@ export class S3FileService {
 
     protected toS3WriteParams(destination: S3File, options: WriteOptions): PutObjectRequest {
         return {
-            Bucket: destination.bucket,
-            Key: destination.key,
+            ...this.toS3LocationParams(destination),
             ACL: options.makePublic ? "public-read" : null,
             ...(options.s3Params || {})
         };
@@ -194,15 +188,32 @@ export class S3FileService {
 
     }
 
-    async readS3String(file: S3File): Promise<string> {
+    protected toGetObjectRequest(file: S3File): GetObjectRequest {
+        return {Bucket: file.bucket, Key: file.key};
+    }
+
+    async getObject(file: S3File): Promise<GetObjectOutput> {
         const s3 = await this.s3Promise;
-        const data = await s3.getObject({Bucket: file.bucket, Key: file.key}).promise();
+        return s3.getObject(this.toS3LocationParams(file)).promise();
+    }
+
+    async deleteObject(file: ScannedS3File): Promise<void> {
+        const s3 = await this.s3Promise;
+        await s3.deleteObject(this.toS3LocationParams(file)).promise();
+    }
+
+    protected toS3LocationParams(file: S3File): {Bucket: string, Key: string} {
+        return {Bucket: file.bucket, Key: file.key};
+    }
+
+    async readS3String(file: S3File): Promise<string> {
+        const data = await this.getObject(file);
         return data.Body.toString();
     }
 
     async waitForS3File(file: S3File): Promise<ScannedS3File> {
         const s3 = await this.s3Promise;
-        await s3.waitFor("objectExists", {Bucket: file.bucket, Key: file.key}).promise();
+        await s3.waitFor("objectExists", this.toS3LocationParams(file)).promise();
         return this.scanS3File(file);
     }
 

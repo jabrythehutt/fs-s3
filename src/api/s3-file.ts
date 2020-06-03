@@ -1,4 +1,5 @@
-import {Complete} from "./complete";
-import {AnyFile} from "./any-file";
+import {LocalFile} from "./local-file";
 
-export type S3File = Complete<AnyFile>;
+export interface S3File extends LocalFile {
+    bucket: string;
+}
