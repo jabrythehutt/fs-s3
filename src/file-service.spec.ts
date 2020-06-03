@@ -50,9 +50,11 @@ describe("File Service", function() {
         localS3Dir = createTempDir();
     });
 
+    const port = 4569;
+    const hostname = "localhost";
+    const endpoint = `http://${hostname}:${port}`;
+
     before(async () => {
-        const port = 4569;
-        const hostname = "localhost";
         s3rver = new S3rver({
             port,
             address: hostname,
@@ -60,21 +62,19 @@ describe("File Service", function() {
             directory: localS3Dir
         });
         await s3rver.run();
-        const endpoint = `http://${hostname}:${port}`;
+    });
+
+    beforeEach(async () => {
+        (s3rver as any).reset();
         s3 = new S3({
             credentials: new Credentials("S3RVER", "S3RVER"),
             endpoint,
             sslEnabled: false,
             s3ForcePathStyle: true
         });
-    });
-
-    beforeEach(async () => {
-        (s3rver as any).reset();
         await s3.createBucket({
             Bucket: testBucket
         }).promise();
-
         localTestDir = createTempDir();
         instance = new FileService(s3);
     });
@@ -173,10 +173,6 @@ describe("File Service", function() {
         writeFileSync(localFile, "foo bar");
         await instance.deleteAll({key: localFile});
         expect(existsSync(localFile)).to.equal(false);
-    });
-
-    it("Throws an error if the user attempts to wait for a local file to exist", async () => {
-        await expect(instance.waitForFile({key: localTestDir})).to.eventually.be.rejectedWith(FsError.LocalFileWait);
     });
 
     describe("List behaviour", () => {
