@@ -19,6 +19,7 @@ import S3 from "aws-sdk/clients/s3";
 import {dirname, resolve as resolvePath} from "path";
 import {NoOpLogger} from "./no.op.logger";
 import {Logger} from "./logger";
+import {FsError} from "./fs.error";
 
 export class FileService implements IFileService {
     s3Promise: Promise<S3>;
@@ -56,7 +57,7 @@ export class FileService implements IFileService {
             });
         } else {
 
-            throw new Error("Can't get a read URL for local files");
+            throw new Error(FsError.LocalLink);
 
         }
 
@@ -110,7 +111,7 @@ export class FileService implements IFileService {
     async waitForFile(file: AnyFile): Promise<ScannedFile> {
         if (!file.bucket) {
             // Local wait is not supported yet
-            throw new Error("Local waiting is not supported yet");
+            throw new Error(FsError.LocalFileWait);
         } else {
             const s3 = await this.s3Promise;
             await s3.waitFor("objectExists", {Bucket: file.bucket, Key: file.key}).promise();
@@ -126,7 +127,7 @@ export class FileService implements IFileService {
 
             // Remove any prefix forward slashes
 
-            if (destination.key.indexOf("/") === 0) {
+            if (destination.key.startsWith("/")) {
                 destination.key = destination.key.replace("/", "");
             }
 
