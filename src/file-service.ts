@@ -443,7 +443,7 @@ export class FileService implements IFileService {
 
     }
 
-    async listAllFolders(folder: AnyFile, delimiter): Promise<AnyFile[]> {
+    async listS3Folders(folder: AnyFile, delimiter: string): Promise<AnyFile[]> {
         const s3 = await this.s3Promise;
         const listRequest = {
             Bucket: folder.bucket,

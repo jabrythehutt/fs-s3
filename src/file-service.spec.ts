@@ -179,6 +179,33 @@ describe("File Service", function() {
         await expect(instance.waitForFile({key: localTestDir})).to.eventually.be.rejectedWith(FsError.LocalFileWait);
     });
 
+    describe("List behaviour", () => {
+        let s3Folders: AnyFile[];
+        let fileName: string;
+        beforeEach(async () => {
+            const folderKeys = [
+                "foo/bar/",
+                "foo/bar/baz/",
+                "baz/"
+            ].sort();
+            fileName = "foo.txt";
+            s3Folders = folderKeys.map(f => ({bucket: testBucket, key: f}));
+            for (const folder of s3Folders) {
+                const fileKey = `${folder.key}${fileName}`;
+                await instance.write("foo bar", {bucket: folder.bucket, key: fileKey});
+            }
+        });
+
+        it("Lists all the S3 folders", async () => {
+            const folders = await instance.listS3Folders({
+                bucket: testBucket,
+                key: ""
+            }, `/${fileName}`);
+            expect(folders).to.deep.equal(s3Folders);
+        });
+
+    });
+
     describe("An S3 folder containing some files", () => {
 
         let s3Folder: AnyFile;
