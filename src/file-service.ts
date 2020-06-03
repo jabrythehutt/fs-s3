@@ -19,6 +19,7 @@ import S3 from "aws-sdk/clients/s3";
 import {dirname, resolve as resolvePath} from "path";
 import {NoOpLogger} from "./no.op.logger";
 import {Logger} from "./logger";
+import {FsError} from "./fs.error";
 
 export class FileService implements IFileService {
     s3Promise: Promise<S3>;
@@ -56,7 +57,7 @@ export class FileService implements IFileService {
             });
         } else {
 
-            throw new Error("Can't get a read URL for local files");
+            throw new Error(FsError.LocalLink);
 
         }
 
@@ -110,7 +111,7 @@ export class FileService implements IFileService {
     async waitForFile(file: AnyFile): Promise<ScannedFile> {
         if (!file.bucket) {
             // Local wait is not supported yet
-            throw new Error("Local waiting is not supported yet");
+            throw new Error(FsError.LocalFileWait);
         } else {
             const s3 = await this.s3Promise;
             await s3.waitFor("objectExists", {Bucket: file.bucket, Key: file.key}).promise();
@@ -126,7 +127,7 @@ export class FileService implements IFileService {
 
             // Remove any prefix forward slashes
 
-            if (destination.key.indexOf("/") === 0) {
+            if (destination.key.startsWith("/")) {
                 destination.key = destination.key.replace("/", "");
             }
 
@@ -442,7 +443,7 @@ export class FileService implements IFileService {
 
     }
 
-    async listAllFolders(folder: AnyFile, delimiter): Promise<AnyFile[]> {
+    async listS3Folders(folder: AnyFile, delimiter: string): Promise<AnyFile[]> {
         const s3 = await this.s3Promise;
         const listRequest = {
             Bucket: folder.bucket,
@@ -573,7 +574,7 @@ export class FileService implements IFileService {
 
         } catch (err) {
 
-            this.logger.debug( err);
+            this.logger.debug(err);
 
             return new Promise((resolve, reject) => {
                 reject(err);
@@ -619,7 +620,7 @@ export class FileService implements IFileService {
         }
 
         // Find out if the key is the same
-        return existingFiles.find( (existingFile) => {
+        return existingFiles.find((existingFile) => {
 
             const sameFilename = existingFile.key === destination.key;
 
@@ -666,7 +667,7 @@ export class FileService implements IFileService {
                     .createReadStream();
                 return new Promise<AnyFile>((resolve, reject) => {
                     file.on("error", (err) => {
-                        this.logger.error( err);
+                        this.logger.error(err);
                         reject(err);
                     });
 
@@ -711,7 +712,7 @@ export class FileService implements IFileService {
 
         } else {
 
-            this.logger.debug( `Skipping existing file: ${this.toFileString(destination)}`);
+            this.logger.debug(`Skipping existing file: ${this.toFileString(destination)}`);
             return destination;
         }
 
@@ -830,7 +831,7 @@ export class FileService implements IFileService {
         const isFile = await this.isFile(file);
         if (!options.overwrite && isFile) {
 
-            this.logger.debug( `Skipping writing existing file: ${this.toFileString(isFile)}`);
+            this.logger.debug(`Skipping writing existing file: ${this.toFileString(isFile)}`);
             return isFile;
 
         } else {
