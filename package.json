@@ -54,7 +54,8 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "mime": "2.4.4"
+    "mime": "2.4.4",
+    "mkdirp": "^1.0.4"
   },
   "nyc": {
     "extension": [
