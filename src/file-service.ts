@@ -574,7 +574,7 @@ export class FileService implements IFileService {
 
         } catch (err) {
 
-            this.logger.debug( err);
+            this.logger.debug(err);
 
             return new Promise((resolve, reject) => {
                 reject(err);
@@ -620,7 +620,7 @@ export class FileService implements IFileService {
         }
 
         // Find out if the key is the same
-        return existingFiles.find( (existingFile) => {
+        return existingFiles.find((existingFile) => {
 
             const sameFilename = existingFile.key === destination.key;
 
@@ -667,7 +667,7 @@ export class FileService implements IFileService {
                     .createReadStream();
                 return new Promise<AnyFile>((resolve, reject) => {
                     file.on("error", (err) => {
-                        this.logger.error( err);
+                        this.logger.error(err);
                         reject(err);
                     });
 
@@ -712,7 +712,7 @@ export class FileService implements IFileService {
 
         } else {
 
-            this.logger.debug( `Skipping existing file: ${this.toFileString(destination)}`);
+            this.logger.debug(`Skipping existing file: ${this.toFileString(destination)}`);
             return destination;
         }
 
@@ -831,7 +831,7 @@ export class FileService implements IFileService {
         const isFile = await this.isFile(file);
         if (!options.overwrite && isFile) {
 
-            this.logger.debug( `Skipping writing existing file: ${this.toFileString(isFile)}`);
+            this.logger.debug(`Skipping writing existing file: ${this.toFileString(isFile)}`);
             return isFile;
 
         } else {
