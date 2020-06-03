@@ -1,6 +1,6 @@
-import {AnyFile} from "./any-file";
-import {WriteOptions} from "./write-options";
-import {ScannedFile} from "./scanned-file";
+import {AnyFile} from "./api/any-file";
+import {WriteOptions} from "./api/write-options";
+import {ScannedFile} from "./api/scanned-file";
 import * as fs from "fs";
 
 export interface IFileService {

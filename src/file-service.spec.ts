@@ -4,14 +4,12 @@ import S3rver from "s3rver";
 import {tmpdir} from "os";
 import del from "del";
 import S3 from "aws-sdk/clients/s3";
-import {AnyFile} from "./any-file";
 import {expect, use} from "chai";
 import {existsSync, mkdtempSync, readFileSync, writeFileSync} from "fs";
-import {ScannedFile} from "./scanned-file";
 import axios from "axios";
 import {Credentials} from "aws-sdk";
 import chaiAsPromised from "chai-as-promised";
-import {FsError} from "./fs.error";
+import {AnyFile, S3File, ScannedFile} from "./api";
 
 function createTempDir(): string {
     return mkdtempSync(join(tmpdir(), "fss3-test-")).toString();
@@ -84,17 +82,11 @@ describe("File Service", function() {
         const text = "foobar";
 
         it("Gets a link for a remote file", async () => {
-            const resultFile = await instance.write(text, {bucket: testBucket, key: fileName});
+            const resultFile = await instance.writeToS3(text, {bucket: testBucket, key: fileName});
             const link = await instance.getReadURL(resultFile);
             const response = await axios.get(link);
             expect(response.data.toString()).to.equal(text,
                 "Didn't receive the expected file content when downloading data from the link")
-        });
-
-        it("Throws an error when trying to get a link for a local file", async () => {
-            const localFilePath = join(localTestDir, fileName);
-            const localFile = await instance.write("foobar", {key: localFilePath});
-            await expect(instance.getReadURL(localFile)).to.eventually.be.rejectedWith(FsError.LocalLink);
         });
 
     });
@@ -192,19 +184,11 @@ describe("File Service", function() {
             }
         });
 
-        it("Lists all the S3 folders", async () => {
-            const folders = await instance.listS3Folders({
-                bucket: testBucket,
-                key: ""
-            }, `/${fileName}`);
-            expect(folders).to.deep.equal(s3Folders);
-        });
-
     });
 
     describe("An S3 folder containing some files", () => {
 
-        let s3Folder: AnyFile;
+        let s3Folder: S3File;
         let localFolder: AnyFile;
         let s3Files: ScannedFile[];
         let s3FileInfo: FileInfo[];
