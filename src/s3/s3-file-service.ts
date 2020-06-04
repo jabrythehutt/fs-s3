@@ -13,8 +13,40 @@ import {defaultCopyOptions} from "./default-copy-options";
 import {defaultContentType} from "./default-content-type";
 import {ResolveDestinationRequest} from "../api/resolve-destination-request";
 import {S3CopyOperation} from "./s3-copy-operation";
+import {AbstractFileService} from "../api/abstract-file-service";
+import { CopyOperation } from "../api/copy-operation";
+import { WriteRequest } from "../api/write-request";
+import {AsyncIterator} from "../api/async.iterator";
+import {FileContent} from "../api/file-content";
+import {CopyOptions} from "../api/copy-options";
 
-export class S3FileService {
+export class S3FileService extends AbstractFileService<S3File> {
+
+    async copyFile(request: CopyOperation<S3File, S3File>, options: CopyOptions<S3File, S3File>): Promise<void> {
+        const s3 = await this.s3Promise;
+        await s3.copyObject({
+            ...this.toS3WriteParams(request.destination, options),
+            CopySource: `${request.source.bucket}/${request.source.key}`,
+        }).promise();
+    }
+
+    scan(f: S3File): Promise<ScannedS3File> {
+        return this.scanS3File(f);
+    }
+    async deleteFile(file: ScannedS3File): Promise<void> {
+        const s3 = await this.s3Promise;
+        await s3.deleteObject(this.toS3LocationParams(file)).promise();
+    }
+    getListIterator(folder: S3File): Promise<AsyncIterator<ScannedS3File[]>> {
+        throw new Error("Method not implemented.");
+    }
+    async read(file: S3File): Promise<FileContent> {
+        const data = await this.getObject(file);
+        return data.Body;
+    }
+    write(request: WriteRequest<S3File>): Promise<ScannedS3File> {
+        return this.writeToS3(request.body, request.file);
+    }
 
     s3Promise: Promise<S3>;
 
@@ -23,6 +55,7 @@ export class S3FileService {
      * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
      */
     constructor(s3: S3 | Promise<S3>) {
+        super();
         this.s3Promise = this.toPromise(s3);
     }
 
@@ -58,7 +91,7 @@ export class S3FileService {
         const listRequest = {
             Bucket: file.bucket,
             Prefix: file.key,
-            Delimiter: delimiter,
+            Delimiter: delimiter
         };
         const items = [];
         await this.collectList(listRequest, async data => {
@@ -118,7 +151,6 @@ export class S3FileService {
                 throw err;
             }
         }
-
     }
 
     resolveDestination(request: ResolveDestinationRequest<S3File, S3File>): S3File {
