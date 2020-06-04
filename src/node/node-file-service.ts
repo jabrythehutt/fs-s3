@@ -14,9 +14,7 @@ import {createHash} from "crypto";
 import {normalize, parse, resolve as resolvePath, sep} from "path";
 import mkdirp from "mkdirp";
 import {S3FileService} from "../s3/s3-file-service";
-import {AnyFile, S3File, ScannedFile, WriteOptions} from "../api";
-import {LocalFile} from "../api/local-file";
-import {Scanned} from "../api/scanned";
+import {AnyFile, S3File, ScannedFile, WriteOptions, LocalFile, Scanned} from "../api";
 
 export class NodeFileService extends S3FileService {
 
@@ -105,29 +103,20 @@ export class NodeFileService extends S3FileService {
 
     }
 
-    async scanFile<T extends LocalFile>(file: T | Scanned<T>): Promise<Scanned<T> | undefined> {
+    async scanFile<T extends LocalFile>(file: T | Scanned<T>): Promise<Scanned<T>> {
         const scannedFile = file as ScannedFile;
         if(scannedFile.md5) {
             return scannedFile as Scanned<T>;
         }
-        if (this.isS3File(file)) {
-            const s3File = this.toS3File(file);
-            const scannedS3File = await this.scanS3File(s3File);
-            return scannedS3File as Scanned<T>;
-        } else {
-            const scannedLocalFile = await this.scanLocalFile(file.key);
-            return scannedLocalFile as Scanned<T>;
-        }
+        return this.isS3File(file) ? this.scanS3File(this.toS3File(file)) : this.scanLocalFile(file.key);
     }
 
     private calculateLocalMD5(localPath: string): Promise<string> {
-        const stream: ReadStream = createReadStream(localPath);
-        return this.calculateStreamMD5(stream);
+        return this.calculateStreamMD5(createReadStream(localPath));
     }
 
-    async calculateLocalFileSize(localPath: string): Promise<number> {
-        localPath = resolvePath(localPath);
-        const fileStats = statSync(localPath);
+    async calculateLocalFileSize(localFile: string): Promise<number> {
+        const fileStats = statSync(localFile);
         return fileStats.size;
     }
 
@@ -136,22 +125,19 @@ export class NodeFileService extends S3FileService {
      * @param file {object} - The file to read
      */
     async readString(file: AnyFile): Promise<string> {
-        if (this.isS3File(file)) {
-            return this.readS3String(this.toS3File(file));
-        } else {
-            // If it's a local file then read it from the local filesystem
-            return readFileSync(file.key).toString();
-        }
+        return this.isS3File(file) ?
+            this.readS3String(this.toS3File(file)) :
+            readFileSync(this.toLocalFile(file).key).toString();
     }
 
-    async scanLocalFile(filePath: string): Promise<Scanned<LocalFile>> {
-        const fileSize = await this.calculateLocalFileSize(filePath);
-        const md5 = await this.calculateLocalMD5(filePath);
+    async scanLocalFile(localFile: string): Promise<Scanned<LocalFile>> {
+        const fileSize = await this.calculateLocalFileSize(localFile);
+        const md5 = await this.calculateLocalMD5(localFile);
         return {
-            key: filePath,
+            key: localFile,
             md5,
             size: fileSize,
-            mimeType: getType(filePath)
+            mimeType: getType(localFile)
         };
 
     }
@@ -177,10 +163,9 @@ export class NodeFileService extends S3FileService {
         return [];
     }
 
-    async listLocal(dir: string): Promise<ScannedFile[]> {
+    async listLocal(file: LocalFile): Promise<ScannedFile[]> {
         try {
-            dir = resolvePath(dir);
-            const files = this.listFilesRecursively(dir);
+            const files = this.listFilesRecursively(file.key);
             return await this.process(files, f => this.scanLocalFile(f), true);
 
         } catch (err) {
@@ -194,7 +179,7 @@ export class NodeFileService extends S3FileService {
      * @param file {AnyFile}
      */
     list(file: AnyFile): Promise<ScannedFile[]> {
-        return this.isS3File(file) ? this.listS3Files(this.toS3File(file)) : this.listLocal(file.key);
+        return this.isS3File(file) ? this.listS3Files(this.toS3File(file)) : this.listLocal(this.toLocalFile(file));
     }
 
     locationsEqual(a: AnyFile, b: AnyFile): boolean {
@@ -283,14 +268,14 @@ export class NodeFileService extends S3FileService {
         return !!(input as S3File).bucket;
     }
 
-    parseSeps(s3Key: string): string {
+    toLocalPath(s3Key: string): string {
         return s3Key.split("/").join(sep);
     }
 
     toLocalFile<T extends LocalFile>(file: AnyFile): T {
         return this.isS3File(file) ? file as T : {
             ...file,
-            key: normalize(this.parseSeps(file.key))
+            key: normalize(this.toLocalPath(file.key))
         } as T;
     }
 
@@ -314,7 +299,7 @@ export class NodeFileService extends S3FileService {
     }
 
     /**
-     * Copy all file/s from one location to another
+     * Copy all files from one location to another
      *
      * @param source {AnyFile} - The source file or directory
      * @param destination {AnyFile} - The destination file or directory

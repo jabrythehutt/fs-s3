@@ -11,7 +11,7 @@ import {S3CopyRequest} from "./s3-copy-request";
 import {S3File, ScannedS3File, WriteOptions} from "../api";
 import {defaultCopyOptions} from "./default-copy-options";
 import {defaultContentType} from "./default-content-type";
-import {ResolveDestinationRequest} from "./resolve-destination-request";
+import {ResolveDestinationRequest} from "../api/resolve-destination-request";
 import {S3CopyOperation} from "./s3-copy-operation";
 
 export class S3FileService {

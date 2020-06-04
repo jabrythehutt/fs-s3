@@ -54,6 +54,7 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
+    "fp-ts": "^2.6.2",
     "mime": "2.4.4",
     "mkdirp": "^1.0.4"
   },

@@ -5,3 +5,5 @@ export * from "./write-options";
 export * from "./s3-file";
 export * from "./scanned-s3-file";
 export * from "./copy-request";
+export * from "./local-file";
+export * from "./scanned";

@@ -1,7 +1,6 @@
-import {WriteOptions} from "./write-options";
+import {LocalFile} from "./local-file";
 
-export interface CopyRequest<T> {
-    source: T;
-    destination: T;
-    options: WriteOptions;
+export interface CopyRequest<S extends LocalFile, D extends LocalFile> {
+    source: S;
+    destination: D;
 }
