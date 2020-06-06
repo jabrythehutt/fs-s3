@@ -16,9 +16,9 @@ import {S3CopyOperation} from "./s3-copy-operation";
 import {AbstractFileService} from "../api/abstract-file-service";
 import { CopyOperation } from "../api/copy-operation";
 import { WriteRequest } from "../api/write-request";
-import {AsyncIterator} from "../api/async.iterator";
 import {FileContent} from "../api/file-content";
 import {CopyOptions} from "../api/copy-options";
+import {S3ListIterator} from "./s3-list-iterator";
 
 export class S3FileService extends AbstractFileService<S3File> {
 
@@ -37,9 +37,7 @@ export class S3FileService extends AbstractFileService<S3File> {
         const s3 = await this.s3Promise;
         await s3.deleteObject(this.toS3LocationParams(file)).promise();
     }
-    getListIterator(folder: S3File): Promise<AsyncIterator<ScannedS3File[]>> {
-        throw new Error("Method not implemented.");
-    }
+
     async read(file: S3File): Promise<FileContent> {
         const data = await this.getObject(file);
         return data.Body;
@@ -247,6 +245,14 @@ export class S3FileService extends AbstractFileService<S3File> {
         const s3 = await this.s3Promise;
         await s3.waitFor("objectExists", this.toS3LocationParams(file)).promise();
         return this.scanS3File(file);
+    }
+
+    list(fileOrFolder: S3File): AsyncIterable<ScannedS3File[]> {
+       return {
+           [Symbol.asyncIterator]() {
+               return new S3ListIterator(this.s3Promise, fileOrFolder)
+           }
+       }
     }
 
 }

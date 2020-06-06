@@ -7,28 +7,16 @@ import {WriteRequest} from "./write-request";
 import {CopyOptions} from "./copy-options";
 import {CopyOperation} from "./copy-operation";
 import {ResolveDestinationRequest} from "./resolve-destination-request";
-import {AsyncIterator} from "./async.iterator";
 import {chunksOf} from "fp-ts/lib/Array";
 import {DeleteOptions} from "./delete-options";
 
 export abstract class AbstractFileService<T extends LocalFile> implements GenericFileService<T> {
 
     async copy<A extends T, B extends T>(request: CopyRequest<A, B>): Promise<void> {
-        const sourceFilesIterator = await this.getListIterator(request.source);
-        while (sourceFilesIterator.hasNext()) {
-            const sourceFiles = await sourceFilesIterator.next();
+        const sourceFilesIterator = this.list(request.source);
+        for await (const sourceFiles of sourceFilesIterator) {
             await this.copyFiles(request, sourceFiles);
         }
-    }
-
-    async list(folder: T): Promise<Scanned<T>[]> {
-        const files = [];
-        const listIterator = await this.getListIterator(folder);
-        while (listIterator.hasNext()) {
-            const newFiles = await listIterator.next();
-            files.push(...newFiles);
-        }
-        return files;
     }
 
     async copyFiles<A extends T, B extends T>(request: CopyRequest<A, B>, sourceFiles: Scanned<A>[]): Promise<void> {
@@ -103,9 +91,8 @@ export abstract class AbstractFileService<T extends LocalFile> implements Generi
     }
 
     async delete(fileOrFolder: T, options?: DeleteOptions): Promise<void> {
-        const iterator = await this.getListIterator(fileOrFolder);
-        while (iterator.hasNext()) {
-            const batch = await iterator.next();
+        const iterator = this.list(fileOrFolder);
+        for await (const batch of iterator) {
             const chunks = chunksOf(options.concurrency)(batch);
             for (const chunk of chunks) {
                 await Promise.all(chunk.map(f => this.deleteFile(f, options)));
@@ -122,10 +109,10 @@ export abstract class AbstractFileService<T extends LocalFile> implements Generi
 
     abstract deleteFile(files: Scanned<T>, options: DeleteOptions): Promise<void>;
 
-    abstract getListIterator(folder: T): Promise<AsyncIterator<Scanned<T>[]>>;
-
     abstract read(file: T): Promise<FileContent>;
 
     abstract write(request: WriteRequest<T>): Promise<Scanned<T>>;
+
+    abstract list(fileOrFolder: T): AsyncIterable<Scanned<T>[]>;
 
 }
