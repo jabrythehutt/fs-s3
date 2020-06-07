@@ -7,7 +7,7 @@
     "compile": "tsc && npm run dist",
     "dist": "webpack",
     "clean": "del-cli 'lib'",
-    "test": "npm run compile && nyc mocha mocha \"src/*.spec.ts\"",
+    "test": "nyc mocha mocha \"src/**/*.spec.ts\"",
     "deploy": "npm run test && npm version patch && npm publish --access public"
   },
   "repository": {
@@ -68,7 +68,7 @@
       "**/*.spec.ts"
     ],
     "include": [
-      "src"
+      "src/**/*.ts"
     ],
     "reporter": [
       "lcov",

@@ -11,12 +11,13 @@ import {chunksOf} from "fp-ts/lib/Array";
 import {DeleteOptions} from "./delete-options";
 import {Optional} from "./optional";
 import {OverwriteOptions} from "./overwrite-options";
-import {fromNullable} from "fp-ts/es6/Option";
 import {pipe} from "fp-ts/lib/pipeable";
-import {toUndefined, map} from "fp-ts/lib/Option";
+import {toUndefined, map, fromNullable} from "fp-ts/lib/Option";
 import {FpOptional} from "./fp.optional";
 import {defaultCopyOptions} from "./default-copy-options";
 import {defaultConcurrencyOptions} from "./default-concurrency-options";
+import {defaultS3WriteOptions} from "../s3/default-s3-write-options";
+import {defaultWriteOptions} from "./default-write-options";
 
 export abstract class AbstractFileService<T extends LocalFile, W> implements GenericFileService<T, W> {
 
@@ -31,7 +32,7 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
         }
     }
 
-    async copyFiles<A extends T, B extends T>(request: CopyRequest<A, B>,
+    protected async copyFiles<A extends T, B extends T>(request: CopyRequest<A, B>,
                                               sourceFiles: Scanned<A>[],
                                               options: CopyOptions<A, B> & W): Promise<void> {
         const copyOperations = sourceFiles.map(source => ({
@@ -65,11 +66,11 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
     }
 
 
-    willAlwaysOverwrite<A extends T, B extends T>(options: CopyOptions<A, B> & W): boolean {
+    protected willAlwaysOverwrite<A extends T, B extends T>(options: CopyOptions<A, B> & W): boolean {
         return options.overwrite && !options.skipSame;
     }
 
-    overwriteDestination<A extends T, B extends T>(sourceFile: Scanned<A>,
+    protected overwriteDestination<A extends T, B extends T>(sourceFile: Scanned<A>,
                                                    destination: Scanned<B>,
                                                    options: CopyOptions<A, B> & W): boolean {
         if (!options.overwrite) {
@@ -94,7 +95,7 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
             this.overwriteDestination(operation.source, scannedDestination.value, options);
     }
 
-    toDestination<A extends T, B extends T>(request: ResolveDestinationRequest<A, B>): B {
+    protected toDestination<A extends T, B extends T>(request: ResolveDestinationRequest<A, B>): B {
         return {
             ...request.destinationFolder,
             key: request.source.key.replace(request.sourceFolder, request.destinationFolder.key)
@@ -126,12 +127,17 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
         return result.value;
     }
 
-    async writeAndScanFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<Optional<Scanned<T>>> {
+    protected async writeAndScanFile(request: WriteRequest<T>,
+                                     options: OverwriteOptions & W): Promise<Optional<Scanned<T>>> {
         await this.writeFile(request, options);
         return this.scan(request.destination);
     }
 
-    async write(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<Optional<Scanned<T>>> {
+    async write(request: WriteRequest<T>, options?: OverwriteOptions & W): Promise<Optional<Scanned<T>>> {
+        options = {
+            ...defaultWriteOptions,
+            ...options,
+        }
         if (options.overwrite) {
             return this.writeAndScanFile(request, options);
         } else {
@@ -146,14 +152,14 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
 
     async read(file: T): Promise<Optional<FileContent>> {
         const scannedFile = await this.scan(file);
-        return FpOptional.of(pipe(
-            fromNullable(scannedFile.value),
-            map(f => this.readFile(f)),
-            toUndefined
-        ));
+        if (scannedFile.exists) {
+           const result = await this.readFile(scannedFile.value);
+           return FpOptional.of(result);
+        }
+        return FpOptional.empty();
     }
 
-    abstract copyFile<A extends T, B extends T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
+    protected abstract copyFile<A extends T, B extends T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
         Promise<void>;
 
     abstract toLocationString(f: T): string;
@@ -162,11 +168,11 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
 
     abstract readFile(file: Scanned<T>): Promise<FileContent>;
 
-    abstract waitForFileToExist(f: T): void;
+    protected abstract waitForFileToExist(f: T): void;
 
-    abstract deleteFile(files: Scanned<T>, options: DeleteOptions<T>): Promise<void>;
+    protected abstract deleteFile(files: Scanned<T>, options: DeleteOptions<T>): Promise<void>;
 
-    abstract writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void>;
+    protected abstract writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void>;
 
     abstract list(fileOrFolder: T): AsyncIterable<Scanned<T>[]>;
 
