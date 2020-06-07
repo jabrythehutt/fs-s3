@@ -15,10 +15,16 @@ import {fromNullable} from "fp-ts/es6/Option";
 import {pipe} from "fp-ts/lib/pipeable";
 import {toUndefined, map} from "fp-ts/lib/Option";
 import {FpOptional} from "./fp.optional";
+import {defaultCopyOptions} from "./default-copy-options";
+import {defaultConcurrencyOptions} from "./default-concurrency-options";
 
 export abstract class AbstractFileService<T extends LocalFile, W> implements GenericFileService<T, W> {
 
-    async copy<A extends T, B extends T>(request: CopyRequest<A, B>, options: CopyOptions<A, B> & W): Promise<void> {
+    async copy<A extends T, B extends T>(request: CopyRequest<A, B>, options?: CopyOptions<A, B> & W): Promise<void> {
+        options = {
+            ...defaultCopyOptions,
+            ...options
+        };
         const sourceFilesIterator = this.list(request.source);
         for await (const sourceFiles of sourceFilesIterator) {
             await this.copyFiles(request, sourceFiles, options);
@@ -96,6 +102,10 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
     }
 
     async delete(fileOrFolder: T, options?: DeleteOptions<T>): Promise<void> {
+        options = {
+            ...defaultConcurrencyOptions,
+            ...options
+        };
         const iterator = this.list(fileOrFolder);
         for await (const batch of iterator) {
             const chunks = chunksOf(options.concurrency)(batch);

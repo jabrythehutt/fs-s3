@@ -17,6 +17,7 @@ import {Optional} from "../api/optional";
 import {FpOptional} from "../api/fp.optional";
 import {S3WriteOptions} from "./s3-write-options";
 import {OverwriteOptions} from "../api/overwrite-options";
+import {defaultS3WriteOptions} from "./default-s3-write-options";
 
 export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
@@ -32,6 +33,10 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     }
 
     async writeFile(request: WriteRequest<S3File>, options: OverwriteOptions & S3WriteOptions): Promise<void> {
+        options = {
+            ...defaultS3WriteOptions,
+            ...options,
+        };
         const s3Params = {
             ...this.toS3WriteParams(request.destination, options),
             Body: request.body,
@@ -49,6 +54,10 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
     async copyFile(request: CopyOperation<S3File, S3File>,
                    options: CopyOptions<S3File, S3File> & S3WriteOptions): Promise<void> {
+        options = {
+            ...defaultS3WriteOptions,
+            ...options
+        };
         const s3 = await this.s3Promise;
         await s3.copyObject({
             ...this.toS3WriteParams(request.destination, options),
