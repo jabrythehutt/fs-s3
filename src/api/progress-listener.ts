@@ -1,3 +1,3 @@
-import {AnyFile} from "./any-file";
+import {LocalFile} from "./local-file";
 
-export type ProgressListener = (destination: AnyFile, current: number, total: number) =>  void;
+export type ProgressListener<T extends LocalFile> = (destination: T, current: number, total: number) =>  void;

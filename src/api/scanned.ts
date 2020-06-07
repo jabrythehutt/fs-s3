@@ -1,6 +1,4 @@
-import {LocalFile} from "./local-file";
-
-export type Scanned<T extends LocalFile> = T & {
+export type Scanned<T> = T & {
     /**
      * The md5 hash of the file content
      */
