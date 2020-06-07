@@ -3,12 +3,12 @@
   "version": "0.3.14",
   "description": "Yet another AWS S3 wrapper to simplify your life",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "compile": "tsc && npm run dist",
-    "dist": "webpack",
-    "clean": "del-cli 'lib'",
+    "compile": "tsc",
+    "clean": "del-cli 'lib', 'dist'",
     "test": "nyc mocha mocha \"src/**/*.spec.ts\"",
-    "deploy": "npm run test && npm version patch && npm publish --access public"
+    "deploy": "npm run clean && npm run compile && npm run test && npm version patch && npm publish --access public"
   },
   "repository": {
     "type": "git",
@@ -51,12 +51,12 @@
     "typescript": "^3.9.3",
     "validator": "^13.0.0",
     "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11"
+    "webpack-cli": "^3.3.11",
+    "mkdirp": "^1.0.4"
   },
   "dependencies": {
     "fp-ts": "^2.6.2",
-    "mime": "2.4.4",
-    "mkdirp": "^1.0.4"
+    "mime": "2.4.4"
   },
   "nyc": {
     "extension": [

@@ -10,13 +10,10 @@ import {Credentials} from "aws-sdk";
 import axios from "axios";
 import chaiAsPromised from "chai-as-promised";
 import {createHash} from "crypto";
-import {S3File, Scanned, ScannedS3File} from "../api";
+import {CopyOperation, CopyOptions, FileContent, S3File, Scanned, ScannedS3File} from "../api";
 import {defaultContentType} from "./default-content-type";
-import {FileContent} from "../api/file-content";
 import {getType} from "mime";
-import {CopyOperation} from "../api/copy-operation";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
-import {CopyOptions} from "../api/copy-options";
 
 const bucketExistError = "The specified bucket does not exist";
 

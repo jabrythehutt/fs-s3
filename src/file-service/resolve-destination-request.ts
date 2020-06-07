@@ -1,5 +1,4 @@
-import {LocalFile} from "./local-file";
-import {Scanned} from "./scanned";
+import {Scanned, LocalFile} from "../api";
 
 export interface ResolveDestinationRequest<S extends LocalFile, D extends LocalFile> {
     source: Scanned<S>;

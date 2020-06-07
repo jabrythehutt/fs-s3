@@ -1,5 +1,5 @@
 import {fromNullable, isSome, Option, toUndefined} from "fp-ts/lib/Option";
-import {Optional} from "./optional";
+import {Optional} from "../api";
 
 export class FpOptional<T> implements Optional<T> {
 

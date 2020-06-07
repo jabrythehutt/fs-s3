@@ -2,7 +2,8 @@ import {getType} from "mime";
 import {
     copyFileSync,
     createReadStream,
-    existsSync, readdirSync,
+    existsSync,
+    readdirSync,
     readFileSync,
     statSync,
     unlinkSync,
@@ -11,19 +12,25 @@ import {
 import {createHash} from "crypto";
 import {join, normalize, parse, sep} from "path";
 import mkdirp from "mkdirp";
-import {S3FileService} from "../s3/s3-file-service";
-import {AnyFile, S3File, LocalFile, Scanned, ScannedS3File, CopyRequest, ScannedFile} from "../api";
-import {GenericFileService} from "../api/generic-file-service";
-import {S3WriteOptions} from "../s3/s3-write-options";
+import {
+    AnyFile,
+    CopyOperation,
+    CopyOptions,
+    CopyRequest,
+    FileContent,
+    LocalFile,
+    Optional,
+    S3File,
+    Scanned,
+    ScannedFile,
+    ScannedS3File,
+    WriteRequest
+} from "../api";
+import {FpOptional, GenericFileService} from "../file-service";
+import {S3FileService, S3WriteOptions} from "../s3";
 import {bimap, Either, fold, left, right} from "fp-ts/lib/Either";
 import {pipe} from "fp-ts/lib/pipeable";
-import {Optional} from "../api/optional";
-import {FpOptional} from "../api/fp.optional";
 import {Readable} from "stream";
-import {CopyOptions} from "../api/copy-options";
-import {CopyOperation} from "../api/copy-operation";
-import {FileContent} from "../api/file-content";
-import {WriteRequest} from "../api/write-request";
 import {OverwriteOptions} from "../api/overwrite-options";
 import S3 from "aws-sdk/clients/s3";
 import {partition} from "fp-ts/lib/Array";

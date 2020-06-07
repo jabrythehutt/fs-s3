@@ -1,12 +1,5 @@
-import {LocalFile} from "./local-file";
-import {Scanned} from "./scanned";
-import {CopyRequest} from "./copy-request";
-import {WriteRequest} from "./write-request";
-import {FileContent} from "./file-content";
-import {DeleteOptions} from "./delete-options";
-import {Optional} from "./optional";
-import {CopyOptions} from "./copy-options";
-import {OverwriteOptions} from "./overwrite-options";
+import {CopyOptions, CopyRequest, DeleteOptions, FileContent, LocalFile, Optional, Scanned, WriteRequest} from "../api";
+import {OverwriteOptions} from "../api/overwrite-options";
 
 export interface GenericFileService<T extends LocalFile, W = {}> {
     list(fileOrFolder: T): AsyncIterable<Scanned<T>[]>;

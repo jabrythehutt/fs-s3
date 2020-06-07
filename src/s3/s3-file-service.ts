@@ -1,19 +1,8 @@
-import S3, {
-    GetObjectOutput,
-    HeadObjectOutput,
-    ListObjectsV2Output,
-    PutObjectRequest
-} from "aws-sdk/clients/s3";
+import S3, {GetObjectOutput, HeadObjectOutput, ListObjectsV2Output, PutObjectRequest} from "aws-sdk/clients/s3";
 import {getType} from "mime";
-import {S3File, Scanned, ScannedS3File} from "../api";
+import {CopyOperation, CopyOptions, FileContent, Optional, S3File, Scanned, ScannedS3File, WriteRequest} from "../api";
 import {defaultContentType} from "./default-content-type";
-import {AbstractFileService} from "../api/abstract-file-service";
-import {CopyOperation} from "../api/copy-operation";
-import {WriteRequest} from "../api/write-request";
-import {FileContent} from "../api/file-content";
-import {CopyOptions} from "../api/copy-options";
-import {Optional} from "../api/optional";
-import {FpOptional} from "../api/fp.optional";
+import {AbstractFileService, FpOptional} from "../file-service";
 import {S3WriteOptions} from "./s3-write-options";
 import {OverwriteOptions} from "../api/overwrite-options";
 import {defaultS3WriteOptions} from "./default-s3-write-options";

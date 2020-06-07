@@ -1,23 +1,22 @@
 import {GenericFileService} from "./generic-file-service";
-import {LocalFile} from "./local-file";
-import {CopyRequest} from "./copy-request";
-import {Scanned} from "./scanned";
-import {FileContent} from "./file-content";
-import {WriteRequest} from "./write-request";
-import {CopyOptions} from "./copy-options";
-import {CopyOperation} from "./copy-operation";
+import {
+    CopyOperation,
+    CopyOptions,
+    CopyRequest,
+    defaultConcurrencyOptions,
+    defaultCopyOptions,
+    DeleteOptions,
+    FileContent,
+    LocalFile,
+    Optional,
+    Scanned,
+    WriteRequest
+} from "../api";
 import {ResolveDestinationRequest} from "./resolve-destination-request";
 import {chunksOf} from "fp-ts/lib/Array";
-import {DeleteOptions} from "./delete-options";
-import {Optional} from "./optional";
-import {OverwriteOptions} from "./overwrite-options";
-import {pipe} from "fp-ts/lib/pipeable";
-import {toUndefined, map, fromNullable} from "fp-ts/lib/Option";
+import {OverwriteOptions} from "../api/overwrite-options";
 import {FpOptional} from "./fp.optional";
-import {defaultCopyOptions} from "./default-copy-options";
-import {defaultConcurrencyOptions} from "./default-concurrency-options";
-import {defaultS3WriteOptions} from "../s3/default-s3-write-options";
-import {defaultWriteOptions} from "./default-write-options";
+import {defaultWriteOptions} from "../api/default-write-options";
 
 export abstract class AbstractFileService<T extends LocalFile, W> implements GenericFileService<T, W> {
 

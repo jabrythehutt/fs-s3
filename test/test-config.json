@@ -1,8 +1,0 @@
-{
-  "s3":{
-    "region":"eu-west-1",
-    "params":{
-      "Bucket":"r3z-sandbox-eu"
-    }
-  }
-}
