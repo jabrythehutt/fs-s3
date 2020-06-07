@@ -11,8 +11,9 @@ import axios from "axios";
 import chaiAsPromised from "chai-as-promised";
 import {createHash} from "crypto";
 import {S3File, ScannedS3File} from "../api";
-import {filterableWithIndex} from "fp-ts";
 import {defaultContentType} from "./default-content-type";
+import {FileContent} from "../api/file-content";
+import {getType} from "mime";
 
 function createTempDir(): string {
     return mkdtempSync(join(tmpdir(), "fss3-test-")).toString();
@@ -25,6 +26,8 @@ async function wipeLocalFolder(localPath: string): Promise<void> {
 async function delay(period: number) {
     await new Promise(resolve => setTimeout(resolve, period));
 }
+
+
 
 function md5(input: string): string {
     const hash = createHash("md5");
@@ -44,6 +47,15 @@ describe("S3 file service", function() {
             Key: file.key
         }).promise();
         return response.Body.toString();
+    }
+
+    async function uploadFile(file: S3File, content: FileContent) {
+        await s3.putObject({
+            Bucket: file.bucket,
+            Key: file.key,
+            Body: content,
+            ContentType: getType(file.key)
+        }).promise();
     }
 
     this.timeout(10000);
@@ -84,6 +96,43 @@ describe("S3 file service", function() {
         instance = new S3FileService(s3);
     });
 
+    describe("List behaviour", () => {
+        let files: S3File[];
+        beforeEach(async () => {
+            const fileNames = [
+                "foo",
+                "bar",
+                "baz",
+            ]
+            files = fileNames.map(n => ({
+                bucket: testBucket,
+                key: `${n}/${n}.txt`
+            }));
+            await Promise.all(files.map(f => uploadFile(f, f.key)));
+        });
+
+        it("Copies all the files from the root into another folder", async () => {
+            const destination = {
+                key: "foobar/",
+                bucket: testBucket
+            };
+            await instance.copy({
+                source: {
+                    key: "",
+                    bucket: testBucket
+                },
+                destination
+            });
+            const allFiles = instance.list(destination);
+            const collectedFiles = [];
+            for await (const l of allFiles) {
+                collectedFiles.push(...l);
+            }
+            console.log(collectedFiles);
+            expect(collectedFiles.length).to.equal(files.length);
+        });
+    });
+
     describe("Reading and writing individual files", () => {
 
         const fileContent = "bar";
@@ -94,12 +143,7 @@ describe("S3 file service", function() {
         const contentType = "text/plain";
 
         async function uploadFileContent() {
-            await s3.putObject({
-                Bucket: file.bucket,
-                Key: file.key,
-                Body: fileContent,
-                ContentType: contentType
-            }).promise();
+            await uploadFile(file, fileContent);
         }
 
         it("Uses the default content type when a value can't be resolved", async () => {

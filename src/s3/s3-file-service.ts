@@ -1,7 +1,7 @@
 import S3, {
     GetObjectOutput,
-    GetObjectRequest,
-    HeadObjectOutput, ListObjectsV2Output,
+    HeadObjectOutput,
+    ListObjectsV2Output,
     PutObjectRequest
 } from "aws-sdk/clients/s3";
 import {getType} from "mime";
@@ -26,8 +26,9 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     /**
      *
      * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
+     * @param maxListItemsPerPage - The maximum number of list items to return in one list page
      */
-    constructor(s3: S3 | Promise<S3>) {
+    constructor(s3: S3 | Promise<S3>, protected maxListItemsPerPage = 10000) {
         super();
         this.s3Promise = this.toPromise(s3);
     }
@@ -160,6 +161,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
                 ...response.value
             };
             response = FpOptional.of(await s3.listObjectsV2({
+                MaxKeys: this.maxListItemsPerPage,
                 ContinuationToken: previousResponse.NextContinuationToken,
                 Prefix: fileOrFolder.key,
                 Bucket: fileOrFolder.bucket
