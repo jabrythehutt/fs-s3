@@ -14,6 +14,7 @@ import {OverwriteOptions} from "./overwrite-options";
 import {fromNullable} from "fp-ts/es6/Option";
 import {pipe} from "fp-ts/lib/pipeable";
 import {toUndefined, map} from "fp-ts/lib/Option";
+import {FpOptional} from "./fp.optional";
 
 export abstract class AbstractFileService<T extends LocalFile, W> implements GenericFileService<T, W> {
 
@@ -135,7 +136,7 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
 
     async read(file: T): Promise<Optional<FileContent>> {
         const scannedFile = await this.scan(file);
-        return Optional.of(pipe(
+        return FpOptional.of(pipe(
             fromNullable(scannedFile.value),
             map(f => this.readFile(f)),
             toUndefined

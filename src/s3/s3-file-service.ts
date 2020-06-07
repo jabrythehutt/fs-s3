@@ -1,15 +1,15 @@
 import S3, {
     GetObjectOutput,
     GetObjectRequest,
-    HeadObjectOutput,
+    HeadObjectOutput, ListObjectsV2Output,
     PutObjectRequest
 } from "aws-sdk/clients/s3";
 import {getType} from "mime";
 import {S3File, Scanned, ScannedS3File} from "../api";
 import {defaultContentType} from "./default-content-type";
 import {AbstractFileService} from "../api/abstract-file-service";
-import { CopyOperation } from "../api/copy-operation";
-import { WriteRequest } from "../api/write-request";
+import {CopyOperation} from "../api/copy-operation";
+import {WriteRequest} from "../api/write-request";
 import {FileContent} from "../api/file-content";
 import {CopyOptions} from "../api/copy-options";
 import {S3ListIterator} from "./s3-list-iterator";
@@ -17,10 +17,19 @@ import {Optional} from "../api/optional";
 import {FpOptional} from "../api/fp.optional";
 import {S3WriteOptions} from "./s3-write-options";
 import {OverwriteOptions} from "../api/overwrite-options";
-import {pipe} from "fp-ts/lib/pipeable";
-import {fromNullable} from "fp-ts/lib/Either";
 
 export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
+
+    s3Promise: Promise<S3>;
+
+    /**
+     *
+     * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
+     */
+    constructor(s3: S3 | Promise<S3>) {
+        super();
+        this.s3Promise = this.toPromise(s3);
+    }
 
     async writeFile(request: WriteRequest<S3File>, options: OverwriteOptions & S3WriteOptions): Promise<void> {
         const s3Params = {
@@ -70,17 +79,6 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         return response.Body;
     }
 
-    s3Promise: Promise<S3>;
-
-    /**
-     *
-     * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
-     */
-    constructor(s3: S3 | Promise<S3>) {
-        super();
-        this.s3Promise = this.toPromise(s3);
-    }
-
     async toPromise<T>(input: T | Promise<T>): Promise<T> {
         return input;
     }
@@ -119,7 +117,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     protected toS3WriteParams(destination: S3File, options: S3WriteOptions): PutObjectRequest {
         return {
             ...this.toS3LocationParams(destination),
-            ACL: options.makePublic ? "public-read" : null,
+            ACL: options.makePublic ? "public-read" : undefined,
             ...(options.s3Params || {})
         };
     }
@@ -133,16 +131,29 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         return s3.getObject(this.toS3LocationParams(file)).promise();
     }
 
-    protected toS3LocationParams(file: S3File): {Bucket: string, Key: string} {
+    protected toS3LocationParams(file: S3File): { Bucket: string, Key: string } {
         return {Bucket: file.bucket, Key: file.key};
     }
 
-    list(fileOrFolder: S3File): AsyncIterable<ScannedS3File[]> {
-       return {
-           [Symbol.asyncIterator]() {
-               return new S3ListIterator(this.s3Promise, fileOrFolder)
-           }
-       }
+    protected toFiles(bucket: string, response: ListObjectsV2Output): ScannedS3File[] {
+        return response.Contents
+            .filter(o => !o.Key.endsWith("/"))
+            .map(o => this.toScannedS3File(bucket, o));
+    }
+
+    async *list(fileOrFolder: S3File): AsyncIterable<ScannedS3File[]> {
+        const s3 = await this.s3Promise;
+        let response: Optional<ListObjectsV2Output> = FpOptional.empty();
+        while (!response.exists || !!response.value.NextContinuationToken) {
+            const previousResponse = {
+                ...response.value
+            };
+            response = FpOptional.of(await s3.listObjectsV2({
+                ContinuationToken: previousResponse.NextContinuationToken,
+                ...this.toS3LocationParams(fileOrFolder),
+            }).promise());
+            yield this.toFiles(fileOrFolder.bucket, response.value);
+        }
     }
 
     async waitForFileToExist(file: S3File): Promise<void> {

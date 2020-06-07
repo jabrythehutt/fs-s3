@@ -2,14 +2,14 @@ import {getType} from "mime";
 import {
     copyFileSync,
     createReadStream,
-    existsSync,
-    readdirSync, readFileSync,
+    existsSync, readdirSync,
+    readFileSync,
     statSync,
     unlinkSync,
-    writeFileSync
+    writeFileSync,
 } from "fs";
 import {createHash} from "crypto";
-import {normalize, parse, resolve as resolvePath, sep} from "path";
+import {join, normalize, parse, sep} from "path";
 import mkdirp from "mkdirp";
 import {S3FileService} from "../s3/s3-file-service";
 import {AnyFile, S3File, LocalFile, Scanned, ScannedS3File, CopyRequest, ScannedFile} from "../api";
@@ -19,13 +19,20 @@ import {bimap, Either, fold, left, right} from "fp-ts/lib/Either";
 import {pipe} from "fp-ts/lib/pipeable";
 import {Optional} from "../api/optional";
 import {FpOptional} from "../api/fp.optional";
-import {flatten} from "fp-ts/lib/Array";
 import {Readable} from "stream";
 import {CopyOptions} from "../api/copy-options";
 import {CopyOperation} from "../api/copy-operation";
 import {FileContent} from "../api/file-content";
+import {WriteRequest} from "../api/write-request";
+import {OverwriteOptions} from "../api/overwrite-options";
+import S3 from "aws-sdk/clients/s3";
+import {partition} from "fp-ts/lib/Array";
 
 export class NodeFileService extends S3FileService implements GenericFileService<AnyFile, S3WriteOptions> {
+
+    constructor(s3Promise: S3 | Promise<S3>, private localFilePollPeriod: number = 100) {
+        super(s3Promise);
+    }
 
     async sleep(period: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, period));
@@ -33,7 +40,7 @@ export class NodeFileService extends S3FileService implements GenericFileService
 
     async waitForLocalFile(localFile: LocalFile): Promise<void> {
         while (!existsSync(localFile.key)) {
-            await this.sleep(100);
+            await this.sleep(this.localFilePollPeriod);
         }
     }
 
@@ -74,7 +81,6 @@ export class NodeFileService extends S3FileService implements GenericFileService
     }
 
 
-
     async readFile(file: ScannedFile): Promise<FileContent> {
         return pipe(
             this.toEither<ScannedS3File, Scanned<LocalFile>>(file),
@@ -103,9 +109,9 @@ export class NodeFileService extends S3FileService implements GenericFileService
     }
 
     async scanLocalFile(file: LocalFile): Promise<Optional<Scanned<LocalFile>>> {
-        if(existsSync(file.key)) {
+        if (existsSync(file.key)) {
             const fileInfo = statSync(file.key);
-            if(fileInfo.isFile()) {
+            if (fileInfo.isFile()) {
                 return FpOptional.of({
                     ...file,
                     md5: await this.calculateLocalMD5(file),
@@ -115,23 +121,6 @@ export class NodeFileService extends S3FileService implements GenericFileService
             }
         }
         return FpOptional.empty();
-    }
-
-    listFilesRecursively(directoryOrFilePath: string): string[] {
-        if (existsSync(directoryOrFilePath)) {
-            const fileInfo = statSync(directoryOrFilePath);
-            if (fileInfo) {
-                if (fileInfo.isDirectory()) {
-                    const chunks = readdirSync(directoryOrFilePath)
-                        .map(f => resolvePath(directoryOrFilePath, f))
-                        .map(f => this.listFilesRecursively(f));
-                    return flatten(chunks);
-                } else if (fileInfo.isFile()) {
-                    return [directoryOrFilePath];
-                }
-            }
-        }
-        return [];
     }
 
     list<T extends LocalFile>(fileOrFolder: T): AsyncIterable<Scanned<T>[]> {
@@ -144,8 +133,25 @@ export class NodeFileService extends S3FileService implements GenericFileService
         ) as AsyncIterable<Scanned<T>[]>;
     }
 
-    listLocal(file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
-        throw new Error("Not implemented yet");
+    existingOnly<T>(items: Optional<T>[]): T[] {
+        return items.filter(item => item.exists).map(item => item.value);
+    }
+
+    async *listLocal(file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
+        const fileStats = statSync(file.key);
+        if (fileStats.isFile()) {
+            const scannedFiles = [await this.scanLocalFile(file)];
+            yield this.existingOnly(scannedFiles);
+        } if (fileStats.isDirectory()) {
+            const filePaths = readdirSync(file.key)
+                .map(p => join(file.key, p)).map(key => ({key}));
+            const partitions = partition((p: LocalFile) => statSync(p.key).isFile())(filePaths);
+            const scannedFiles = await Promise.all(partitions.left.map(p => this.scanLocalFile(p)));
+            yield this.existingOnly(scannedFiles);
+            for(const dir of partitions.right) {
+                yield* this.listLocal(dir);
+            }
+        }
     }
 
     async copy<A extends AnyFile, B extends AnyFile>(request: CopyRequest<A, B>,
@@ -163,6 +169,18 @@ export class NodeFileService extends S3FileService implements GenericFileService
             )
         )
 
+    }
+
+    async writeFile(request: WriteRequest<AnyFile>, options: OverwriteOptions & S3WriteOptions): Promise<void> {
+        const mapBoth = (f) => bimap(f, f);
+        return pipe(
+            this.toEither(request.destination),
+            mapBoth(f => ({...request, destination: f})),
+            fold(
+                (s3Request: WriteRequest<S3File>) => super.writeFile(s3Request, options),
+                async (localRequest: WriteRequest<LocalFile>) => writeFileSync(request.destination.key, request.body)
+            )
+        )
     }
 
     async copyFile<A extends AnyFile, B extends AnyFile>(request: CopyOperation<A, B>,
@@ -208,7 +226,7 @@ export class NodeFileService extends S3FileService implements GenericFileService
     }
 
     async copyS3ToLocal(request: CopyOperation<S3File, LocalFile>,
-                  options: CopyOptions<S3File, LocalFile>): Promise<void> {
+                        options: CopyOptions<S3File, LocalFile>): Promise<void> {
         await this.ensureDirectoryExistence(request.destination);
         const body = await this.read(request.source);
         writeFileSync(request.destination.key, body);
