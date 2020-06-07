@@ -81,13 +81,14 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
 
     async proceedWithCopy<A extends T, B extends T>(operation: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
         Promise<boolean> {
-        // Don't bother checking the destination file if it'll always be overwritten
-        if (this.willAlwaysOverwrite(options)) {
-            return true;
-        }
 
         if (this.sameLocation(operation.source, operation.destination)) {
             return false;
+        }
+
+        // Don't bother checking the destination file if it'll always be overwritten
+        if (this.willAlwaysOverwrite(options)) {
+            return true;
         }
 
         const scannedDestination = await this.scan(operation.destination);

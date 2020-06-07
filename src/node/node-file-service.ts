@@ -34,11 +34,11 @@ export class NodeFileService extends S3FileService implements GenericFileService
         super(s3Promise);
     }
 
-    async sleep(period: number): Promise<void> {
+    protected async sleep(period: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, period));
     }
 
-    async waitForLocalFile(localFile: LocalFile): Promise<void> {
+    protected async waitForLocalFile(localFile: LocalFile): Promise<void> {
         while (!existsSync(localFile.key)) {
             await this.sleep(this.localFilePollPeriod);
         }
@@ -48,11 +48,11 @@ export class NodeFileService extends S3FileService implements GenericFileService
         unlinkSync(f.key);
     }
 
-    toEither<T extends S3File, L extends LocalFile>(f: AnyFile): Either<T, L> {
+    protected toEither<T extends S3File, L extends LocalFile>(f: AnyFile): Either<T, L> {
         return this.isS3File(f) ? left(this.toS3File(f)) : right(this.toLocalFile(f));
     }
 
-    async waitForFileToExist(file: AnyFile): Promise<void> {
+    protected async waitForFileToExist(file: AnyFile): Promise<void> {
         return pipe(
             this.toEither(file),
             fold(f => super.waitForFileToExist(f), f => this.waitForLocalFile(f))
@@ -64,11 +64,11 @@ export class NodeFileService extends S3FileService implements GenericFileService
         await mkdirp(fileInfo.dir);
     }
 
-    directoryExists(dirPath: string) {
+    protected directoryExists(dirPath: string) {
         return existsSync(dirPath) && statSync(dirPath).isDirectory();
     }
 
-    async calculateStreamMD5(stream: Readable): Promise<string> {
+    protected async calculateStreamMD5(stream: Readable): Promise<string> {
         const hash = createHash("md5");
         for await (const chunk of stream) {
             hash.update(chunk, "utf8");
@@ -101,14 +101,14 @@ export class NodeFileService extends S3FileService implements GenericFileService
         ) as Promise<Optional<Scanned<T>>>;
     }
 
-    async deleteFile<T extends Scanned<LocalFile>>(file: T): Promise<void> {
+    protected async deleteFile<T extends Scanned<LocalFile>>(file: T): Promise<void> {
         return pipe(
             this.toEither<ScannedS3File, Scanned<LocalFile>>(file),
             fold(f => super.deleteFile(f), f => this.deleteLocalFile(f))
         );
     }
 
-    async scanLocalFile(file: LocalFile): Promise<Optional<Scanned<LocalFile>>> {
+    protected async scanLocalFile(file: LocalFile): Promise<Optional<Scanned<LocalFile>>> {
         if (existsSync(file.key)) {
             const fileInfo = statSync(file.key);
             if (fileInfo.isFile()) {
@@ -133,11 +133,11 @@ export class NodeFileService extends S3FileService implements GenericFileService
         ) as AsyncIterable<Scanned<T>[]>;
     }
 
-    existingOnly<T>(items: Optional<T>[]): T[] {
+    protected existingOnly<T>(items: Optional<T>[]): T[] {
         return items.filter(item => item.exists).map(item => item.value);
     }
 
-    async *listLocal(file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
+    protected async *listLocal(file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
         const fileStats = statSync(file.key);
         if (fileStats.isFile()) {
             const scannedFiles = [await this.scanLocalFile(file)];
@@ -171,7 +171,8 @@ export class NodeFileService extends S3FileService implements GenericFileService
 
     }
 
-    async writeFile(request: WriteRequest<AnyFile>, options: OverwriteOptions & S3WriteOptions): Promise<void> {
+    protected async writeFile(request: WriteRequest<AnyFile>,
+                              options: OverwriteOptions & S3WriteOptions): Promise<void> {
         const mapBoth = (f) => bimap(f, f);
         return pipe(
             this.toEither(request.destination),
@@ -183,7 +184,7 @@ export class NodeFileService extends S3FileService implements GenericFileService
         )
     }
 
-    async copyFile<A extends AnyFile, B extends AnyFile>(request: CopyOperation<A, B>,
+    protected async copyFile<A extends AnyFile, B extends AnyFile>(request: CopyOperation<A, B>,
                                                          options: CopyOptions<A, B> & S3WriteOptions): Promise<void> {
 
         const mapBoth = f => bimap(f, f);
@@ -217,7 +218,7 @@ export class NodeFileService extends S3FileService implements GenericFileService
     }
 
 
-    async copyLocalToS3(request: CopyOperation<LocalFile, S3File>,
+    protected async copyLocalToS3(request: CopyOperation<LocalFile, S3File>,
                         options: CopyOptions<LocalFile, S3File> & S3WriteOptions): Promise<void> {
         await this.writeFile({
             body: readFileSync(request.source.key),
@@ -225,50 +226,50 @@ export class NodeFileService extends S3FileService implements GenericFileService
         }, options);
     }
 
-    async copyS3ToLocal(request: CopyOperation<S3File, LocalFile>,
+    protected async copyS3ToLocal(request: CopyOperation<S3File, LocalFile>,
                         options: CopyOptions<S3File, LocalFile>): Promise<void> {
         await this.ensureDirectoryExistence(request.destination);
         const body = await this.read(request.source);
         writeFileSync(request.destination.key, body);
     }
 
-    async copyLocalToLocal(request: CopyOperation<LocalFile, LocalFile>,
+    protected async copyLocalToLocal(request: CopyOperation<LocalFile, LocalFile>,
                            options: CopyOptions<LocalFile, LocalFile>): Promise<void> {
         await this.ensureDirectoryExistence(request.destination);
         copyFileSync(request.source.key, request.destination.key);
     }
 
-    isS3File(input: AnyFile): boolean {
+    protected isS3File(input: AnyFile): boolean {
         return !!(input as S3File).bucket;
     }
 
-    toLocalPath(s3Key: string): string {
+    protected toLocalPath(s3Key: string): string {
         return s3Key.split("/").join(sep);
     }
 
-    toLocalFile<T extends LocalFile>(file: AnyFile): T {
+    protected toLocalFile<T extends LocalFile>(file: AnyFile): T {
         return this.isS3File(file) ? file as T : {
             ...file,
             key: normalize(this.toLocalPath(file.key))
         } as T;
     }
 
-    toS3File<T extends S3File>(destination: AnyFile): T {
+    protected toS3File<T extends S3File>(destination: AnyFile): T {
         return this.isS3File(destination) ? {
             ...destination,
             key: this.toS3Key(destination.key)
         } as T : destination as T;
     }
 
-    replacePathSepsWithForwardSlashes(input: string): string {
+    protected replacePathSepsWithForwardSlashes(input: string): string {
         return input.split(sep).join("/");
     }
 
-    stripPrefixSlash(input: string): string {
+    protected stripPrefixSlash(input: string): string {
         return input.startsWith("/") ? input.replace("/", "") : input;
     }
 
-    toS3Key(input: string): string {
+    protected toS3Key(input: string): string {
         return this.stripPrefixSlash(this.replacePathSepsWithForwardSlashes(input));
     }
 

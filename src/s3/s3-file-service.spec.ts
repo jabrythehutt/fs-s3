@@ -1,6 +1,6 @@
 import {S3FileService} from "./s3-file-service";
 import {mkdtempSync} from "fs";
-import {join} from "path";
+import {basename, join} from "path";
 import {tmpdir} from "os";
 import del from "del";
 import S3rver from "s3rver";
@@ -10,12 +10,13 @@ import {Credentials} from "aws-sdk";
 import axios from "axios";
 import chaiAsPromised from "chai-as-promised";
 import {createHash} from "crypto";
-import {S3File, ScannedS3File} from "../api";
+import {S3File, Scanned, ScannedS3File} from "../api";
 import {defaultContentType} from "./default-content-type";
 import {FileContent} from "../api/file-content";
 import {getType} from "mime";
 import {CopyOperation} from "../api/copy-operation";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
+import {CopyOptions} from "../api/copy-options";
 
 const bucketExistError = "The specified bucket does not exist";
 
@@ -39,6 +40,19 @@ function md5(input: string): string {
 
 function stringSize(input: string): number {
     return Buffer.byteLength(input);
+}
+
+type FileInfo = Scanned<{
+    fileName: string;
+}>;
+
+function describeFile(file: ScannedS3File): FileInfo {
+    return {
+        fileName: basename(file.key),
+        md5: file.md5,
+        size: file.size,
+        mimeType: file.mimeType
+    };
 }
 
 describe("S3 file service", function() {
@@ -146,6 +160,10 @@ describe("S3 file service", function() {
                 key: "foobar/",
                 bucket: testBucket
             };
+            const initialFiles = await collectList({
+                key: "",
+                bucket: testBucket
+            });
             await instance.copy({
                 source: {
                     key: "",
@@ -153,8 +171,8 @@ describe("S3 file service", function() {
                 },
                 destination
             });
-            const collectedFiles = await collectList(destination);
-            expect(collectedFiles.length).to.equal(files.length);
+            const copiedFiles = await collectList(destination);
+            expect(initialFiles.map(describeFile)).to.deep.equal(copiedFiles.map(describeFile))
         });
     });
 
@@ -162,7 +180,7 @@ describe("S3 file service", function() {
 
         const fileContent = "bar";
         const file = {
-            key: "foo.txt",
+            key: "foo/bar/foo.txt",
             bucket: testBucket
         };
         const contentType = "text/plain";
@@ -331,7 +349,64 @@ describe("S3 file service", function() {
                     destination
                 };
                 expect(copyOperations).to.deep.equal([expectedCopyOperation]);
+            });
 
+            describe("Copy overwrite behaviour", () => {
+                let destination: S3File;
+                let options: CopyOptions<S3File, S3File>;
+                let copyOperations: CopyOperation<S3File, S3File>[];
+
+                beforeEach(async () => {
+                    destination = {
+                        bucket: testBucket,
+                        key: "foobar.txt"
+                    };
+                    await instance.copy({source: file, destination});
+                    copyOperations = [];
+                    options = {
+                        listener: operation => copyOperations.push(operation)
+                    }
+                });
+
+                it("Overwrites an existing file when copying a file using the overwrite option", async () => {
+                    options.overwrite = true;
+                    await instance.copy({source: file, destination}, options);
+                    expect(copyOperations).to.have.lengthOf(1);
+                });
+
+                it("Doesn't overwrite an existing file when copying a file not set to overwrite", async () => {
+                    options.overwrite = false;
+                    await instance.copy({source: file, destination}, options);
+                    expect(copyOperations).to.have.lengthOf(0);
+                });
+
+                it("Doesn't overwrite identical content when content-based skipping is enabled", async () => {
+                    options.overwrite = true;
+                    options.skipSame = true;
+                    await instance.copy({source: file, destination}, options);
+                    expect(copyOperations).to.have.lengthOf(0);
+                });
+
+                it("Overwrites different content when content-based skipping is enabled", async () => {
+                    options.overwrite = true;
+                    options.skipSame = true;
+                    const otherFile = {bucket: testBucket, key: "otherfile.txt"};
+                    await uploadFile(otherFile, "other content");
+                    await instance.copy({source: otherFile, destination}, options);
+                    expect(copyOperations).to.have.lengthOf(1);
+                });
+            });
+
+            it("Doesn't copy a file when the destination is the same", async () => {
+                const copyOperations = [];
+                await instance.copy({
+                    source: file,
+                    destination: file
+                }, {
+                    overwrite: true,
+                    listener: operation => copyOperations.push(operation)
+                });
+                expect(copyOperations).to.deep.equal([]);
             });
 
 
