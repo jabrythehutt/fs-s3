@@ -15,6 +15,7 @@ import {defaultContentType} from "./default-content-type";
 import {FileContent} from "../api/file-content";
 import {getType} from "mime";
 import {CopyOperation} from "../api/copy-operation";
+import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
 
 const bucketExistError = "The specified bucket does not exist";
 
@@ -206,7 +207,7 @@ describe("S3 file service", function() {
         });
 
         it("Provides status updates for objects being uploaded", async () => {
-            const progressEvents: ProgressEvent[] = [];
+            const progressEvents: ManagedUpload.Progress[] = [];
             await instance.write({
                 destination: file,
                 body: fileContent

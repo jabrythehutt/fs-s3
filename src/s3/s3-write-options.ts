@@ -1,4 +1,4 @@
-import {ProgressListener, S3File} from "../api";
+import {ProgressListener} from "../api";
 import {CopyObjectRequest, PutObjectRequest} from "aws-sdk/clients/s3";
 
 export interface S3WriteOptions {
@@ -10,7 +10,7 @@ export interface S3WriteOptions {
     /**
      * Listen to S3 upload progress updates
      */
-    progressListener?: ProgressListener<S3File>;
+    progressListener?: ProgressListener;
 
     /**
      * Make the object public (if writing to S3)
