@@ -14,6 +14,9 @@ import {S3File, ScannedS3File} from "../api";
 import {defaultContentType} from "./default-content-type";
 import {FileContent} from "../api/file-content";
 import {getType} from "mime";
+import {CopyOperation} from "../api/copy-operation";
+
+const bucketExistError = "The specified bucket does not exist";
 
 function createTempDir(): string {
     return mkdtempSync(join(tmpdir(), "fss3-test-")).toString();
@@ -27,8 +30,6 @@ async function delay(period: number) {
     await new Promise(resolve => setTimeout(resolve, period));
 }
 
-
-
 function md5(input: string): string {
     const hash = createHash("md5");
     hash.update(input);
@@ -41,12 +42,23 @@ function stringSize(input: string): number {
 
 describe("S3 file service", function() {
 
+    this.timeout(10000);
+
     async function readFileContent(file: S3File): Promise<string> {
         const response = await s3.getObject({
             Bucket: file.bucket,
             Key: file.key
         }).promise();
         return response.Body.toString();
+    }
+
+    async function collectList(folder: S3File): Promise<ScannedS3File[]> {
+        const allFiles = await instance.list(folder);
+        const collectedFiles = [];
+        for await (const files of allFiles) {
+            collectedFiles.push(...files);
+        }
+        return collectedFiles;
     }
 
     async function uploadFile(file: S3File, content: FileContent) {
@@ -57,8 +69,6 @@ describe("S3 file service", function() {
             ContentType: getType(file.key)
         }).promise();
     }
-
-    this.timeout(10000);
 
     let instance: S3FileService;
     let s3rver: S3rver;
@@ -111,6 +121,25 @@ describe("S3 file service", function() {
             await Promise.all(files.map(f => uploadFile(f, f.key)));
         });
 
+        it("Throws an error when attempting to list a bucket that doesn't exist", async () => {
+            await expect(collectList({bucket: `${testBucket}bar`, key: ""}))
+                .to.eventually.be.rejectedWith(bucketExistError);
+        });
+
+        it("Scrolls through multiple pages of results", async () => {
+            const itemsPerPage = 1;
+            instance = new S3FileService(s3, itemsPerPage);
+            const iterable = instance.list({
+                key: "",
+                bucket: testBucket
+            });
+            const pages = [];
+            for await (const page of iterable) {
+                pages.push(page);
+            }
+            expect(pages.length).to.equal(files.length / itemsPerPage);
+        });
+
         it("Copies all the files from the root into another folder", async () => {
             const destination = {
                 key: "foobar/",
@@ -123,12 +152,7 @@ describe("S3 file service", function() {
                 },
                 destination
             });
-            const allFiles = instance.list(destination);
-            const collectedFiles = [];
-            for await (const l of allFiles) {
-                collectedFiles.push(...l);
-            }
-            console.log(collectedFiles);
+            const collectedFiles = await collectList(destination);
             expect(collectedFiles.length).to.equal(files.length);
         });
     });
@@ -162,6 +186,16 @@ describe("S3 file service", function() {
             expect(object.ContentType).to.equal(defaultContentType);
         });
 
+        it("Throws an error when attempting to write to a non-existent bucket", async () => {
+            await expect(instance.write({
+                destination: {
+                    bucket: `${testBucket}bar`,
+                    key: "foo"
+                },
+                body: fileContent
+            })).to.eventually.be.rejectedWith(bucketExistError);
+        });
+
         it("Makes a file public", async () => {
             await expect(instance.write({
                 destination: file,
@@ -172,15 +206,14 @@ describe("S3 file service", function() {
         });
 
         it("Provides status updates for objects being uploaded", async () => {
-            let progressEvent: ProgressEvent;
+            const progressEvents: ProgressEvent[] = [];
             await instance.write({
                 destination: file,
                 body: fileContent
             }, {
-                progressListener: p => progressEvent = p
+                progressListener: p => progressEvents.push(p)
             });
-            expect(progressEvent).to.be.an("object");
-            expect(progressEvent.loaded).to.be.a("number");
+            expect(progressEvents.length).to.be.at.least(1)
         });
 
         it("Gets an empty response when attempting to get a link for a non-existent file", async () => {
@@ -240,6 +273,15 @@ describe("S3 file service", function() {
                 expect(response.Contents).to.deep.equal([]);
             });
 
+            it("Listens for the deleted files", async () => {
+                const deletedFiles: ScannedS3File[] = [];
+                const expectedDeletedFiles = await collectList(file);
+                await instance.delete(file, {
+                    listener: f => deletedFiles.push(f)
+                });
+                expect(deletedFiles).to.deep.equal(expectedDeletedFiles);
+            });
+
             it("Gets a valid link for the file", async () => {
                 const link = await instance.getReadUrl(file);
                 expect(link.exists).to.equal(true);
@@ -269,6 +311,26 @@ describe("S3 file service", function() {
                     destination
                 });
                 expect(await readFileContent(destination)).to.equal(fileContent);
+            });
+
+            it("Listens to copy operations", async () => {
+                const copyOperations = [];
+                const destination = {
+                    bucket: testBucket,
+                    key: "baz/foo.txt"
+                }
+                await instance.copy({
+                    source: file,
+                    destination
+                }, {
+                    listener: operation => copyOperations.push(operation)
+                });
+                const expectedCopyOperation: CopyOperation<S3File, S3File> = {
+                    source: (await instance.scan(file)).value,
+                    destination
+                };
+                expect(copyOperations).to.deep.equal([expectedCopyOperation]);
+
             });
 
 

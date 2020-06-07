@@ -68,7 +68,7 @@
       "**/*.spec.ts"
     ],
     "include": [
-      "src/**/*.ts"
+      "src/**"
     ],
     "reporter": [
       "lcov",
