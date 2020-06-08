@@ -42,6 +42,47 @@ describe("Node file service", function() {
         generateTests("Standard tests", () => folder, () => tester);
     });
 
+    describe("It passes a request to another method", () => {
+
+        function ParamDecorator(...args) {
+
+        }
+
+        function SomeDecorator(...annotationArgs) {
+            return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+                const originalMethod = descriptor.value;
+                console.log("ARGPASSED: ");
+                console.log(annotationArgs);
+                // anonymous function, not arrow
+                target.bar("baz");
+                descriptor.value = function (...args: any[]) {
+                    return originalMethod.apply(this, args);
+                };
+            };
+        }
+
+        class Foo {
+            @SomeDecorator()
+            foo(@ParamDecorator input: any) {
+                console.log("foo", input);
+            }
+
+            bar(input: any) {
+                console.log("bar", input);
+            }
+
+            baz = {
+            }
+        }
+
+        it("Invokes the bar method", () => {
+            const foo = new Foo();
+            foo.foo("baz");
+        });
+
+
+    });
+
     describe("Local-only tests", () => {
         let folder: LocalFile;
         beforeEach(() => {

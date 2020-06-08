@@ -16,7 +16,10 @@ import {AbstractFileService, FpOptional} from "../file-service";
 import {S3WriteOptions} from "./s3-write-options";
 import {defaultS3WriteOptions} from "./default-s3-write-options";
 import {defaultLinkExpiryPeriod} from "./default-link-expiry-period";
+import {RegisterParser} from "../file-service/register-parser";
+import {S3FileParser} from "./s3-file-parser";
 
+@RegisterParser<S3File>(p => S3FileParser.toS3File(p))
 export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
     s3Promise: Promise<S3>;
@@ -60,6 +63,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
             CopySource: `${request.source.bucket}/${request.source.key}`,
         }).promise();
     }
+
 
     async scan(file: S3File): Promise<Optional<ScannedS3File>> {
         const s3 = await this.s3Promise;

@@ -24,12 +24,11 @@ export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions
         super();
     }
 
-
     protected toEither<T extends S3File, L extends LocalFile>(f: AnyFile): Either<T, L> {
         return this.isS3File(f) ? left(this.toS3File(f)) : right(this.toLocalFile(f));
     }
 
-    async waitForFileToExist(file: AnyFile): Promise<void> {
+    waitForFileToExist(file: AnyFile): Promise<void> {
         return pipe(
             this.toEither(file),
             fold(f => this.s3Fs.waitForFileToExist(f),

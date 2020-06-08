@@ -16,7 +16,7 @@ import {
 } from "../api";
 import {ResolveDestinationRequest} from "./resolve-destination-request";
 import {chunksOf} from "fp-ts/lib/Array";
-import {FpOptional} from "./fp.optional";
+import {FpOptional} from "./fp-optional";
 
 export abstract class AbstractFileService<T extends LocalFile, W> implements GenericFileService<T, W> {
 
