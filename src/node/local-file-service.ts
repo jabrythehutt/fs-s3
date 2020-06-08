@@ -26,12 +26,9 @@ import {createHash} from "crypto";
 import {join, parse} from "path";
 import {partition} from "fp-ts/lib/Array";
 import mkdirp from "mkdirp";
-import {RegisterParser} from "../file-service/register-parser";
-import {LocalPathParser} from "./local-path-parser";
-import {parsePath} from "../file-service/parse-path";
-import {parsedFile} from "../file-service/parsed-file";
+import {parsed} from "../file-service/parsed";
+import {parsedLocalFile} from "./parsed-local-file";
 
-@RegisterParser(f => LocalPathParser.toLocalFile(f))
 export class LocalFileService extends AbstractFileService<LocalFile, {}> {
 
     constructor(private pollPeriod: number = 100) {
@@ -44,14 +41,14 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
         copyFileSync(request.source.key, request.destination.key);
     }
 
-    @parsePath
-    async ensureDirectoryExistence(@parsedFile() localFile: LocalFile): Promise<void> {
+    @parsed
+    async ensureDirectoryExistence(@parsedLocalFile localFile: LocalFile): Promise<void> {
         const fileInfo = parse(localFile.key);
         await mkdirp(fileInfo.dir);
     }
 
-    @parsePath
-    async deleteFile(@parsedFile() file: Scanned<LocalFile>, options: DeleteOptions<LocalFile>): Promise<void> {
+    @parsed
+    async deleteFile(@parsedLocalFile file: Scanned<LocalFile>, options: DeleteOptions<LocalFile>): Promise<void> {
         unlinkSync(file.key);
     }
 
@@ -67,8 +64,8 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
         return this.calculateStreamMD5(createReadStream(file.key));
     }
 
-    @parsePath
-    async scan(@parsedFile() file: LocalFile): Promise<Optional<Scanned<LocalFile>>> {
+    @parsed
+    async scan(@parsedLocalFile file: LocalFile): Promise<Optional<Scanned<LocalFile>>> {
         if (existsSync(file.key)) {
             const fileInfo = statSync(file.key);
             if (fileInfo.isFile()) {
@@ -83,8 +80,8 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
         return FpOptional.empty();
     }
 
-    @parsePath
-    toLocationString(@parsedFile() f: LocalFile): string {
+    @parsed
+    toLocationString(@parsedLocalFile f: LocalFile): string {
         return f.key;
     }
 
@@ -92,8 +89,8 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
         return new Promise(resolve => setTimeout(resolve, period));
     }
 
-    @parsePath
-    async waitForFileToExist(@parsedFile() file: LocalFile): Promise<void> {
+    @parsed
+    async waitForFileToExist(@parsedLocalFile file: LocalFile): Promise<void> {
         while (!existsSync(file.key)) {
             await this.sleep(this.pollPeriod);
         }
@@ -108,8 +105,8 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
         return items.filter(item => item.exists).map(item => item.value);
     }
 
-    @parsePath
-    async *list(@parsedFile() file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
+    @parsed
+    async *list(@parsedLocalFile file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
         if (existsSync(file.key)) {
             const fileStats = statSync(file.key);
             if (fileStats.isFile()) {
@@ -131,8 +128,8 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
         yield [];
     }
 
-    @parsePath
-    async readFile(@parsedFile() file: Scanned<LocalFile>): Promise<FileContent> {
+    @parsed
+    async readFile(@parsedLocalFile file: Scanned<LocalFile>): Promise<FileContent> {
         return readFileSync(file.key);
     }
 }

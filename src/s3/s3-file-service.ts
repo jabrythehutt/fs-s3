@@ -16,10 +16,9 @@ import {AbstractFileService, FpOptional} from "../file-service";
 import {S3WriteOptions} from "./s3-write-options";
 import {defaultS3WriteOptions} from "./default-s3-write-options";
 import {defaultLinkExpiryPeriod} from "./default-link-expiry-period";
-import {RegisterParser} from "../file-service/register-parser";
-import {S3FileParser} from "./s3-file-parser";
+import {parsed} from "../file-service/parsed";
+import {parsedS3File} from "./parsed-s3-file";
 
-@RegisterParser<S3File>(p => S3FileParser.toS3File(p))
 export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
     s3Promise: Promise<S3>;
@@ -34,8 +33,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         this.s3Promise = this.toPromise(s3);
     }
 
-    async writeFile(request: WriteRequest<S3File>,
-                              options: OverwriteOptions & S3WriteOptions): Promise<void> {
+    async writeFile(request: WriteRequest<S3File>, options: OverwriteOptions & S3WriteOptions): Promise<void> {
         options = {
             ...defaultS3WriteOptions,
             ...options,
@@ -65,7 +63,9 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     }
 
 
-    async scan(file: S3File): Promise<Optional<ScannedS3File>> {
+
+    @parsed
+    async scan(@parsedS3File file: S3File): Promise<Optional<ScannedS3File>> {
         const s3 = await this.s3Promise;
         try {
             const info = await s3.headObject(this.toS3LocationParams(file)).promise();
@@ -78,7 +78,8 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         }
     }
 
-    async deleteFile(file: ScannedS3File, options: DeleteOptions<S3File>): Promise<void> {
+    @parsed
+    async deleteFile(@parsedS3File file: ScannedS3File, options: DeleteOptions<S3File>): Promise<void> {
         const s3 = await this.s3Promise;
         await s3.deleteObject(this.toS3LocationParams(file)).promise();
     }
@@ -102,7 +103,8 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         };
     }
 
-    async getReadUrl(file: S3File, expires: number = defaultLinkExpiryPeriod): Promise<Optional<string>> {
+    @parsed
+    async getReadUrl(@parsedS3File file: S3File, expires: number = defaultLinkExpiryPeriod): Promise<Optional<string>> {
         const scannedFile = await this.scan(file);
         if (scannedFile.exists) {
             const link = await this.getReadURLForFile(scannedFile.value, expires);
@@ -119,7 +121,8 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         });
     }
 
-    protected headResponseToFileInfo(file: S3File, response: HeadObjectOutput): ScannedS3File {
+    @parsed
+    protected headResponseToFileInfo(@parsedS3File file: S3File, response: HeadObjectOutput): ScannedS3File {
         return {
             ...file,
             size: response.ContentLength,
@@ -128,11 +131,13 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         };
     }
 
-    toLocationString(input: S3File): string {
+    @parsed
+    toLocationString(@parsedS3File input: S3File): string {
         return `s3://${[input.bucket, input.key].join("/")}`;
     }
 
-    protected toS3WriteParams(destination: S3File, options: S3WriteOptions): PutObjectRequest {
+    @parsed
+    protected toS3WriteParams(@parsedS3File destination: S3File, options: S3WriteOptions): PutObjectRequest {
         return {
             ...this.toS3LocationParams(destination),
             ACL: options.makePublic ? "public-read" : undefined,
@@ -140,12 +145,14 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         };
     }
 
-    protected async getObject(file: S3File): Promise<GetObjectOutput> {
+    @parsed
+    protected async getObject(@parsedS3File file: S3File): Promise<GetObjectOutput> {
         const s3 = await this.s3Promise;
         return s3.getObject(this.toS3LocationParams(file)).promise();
     }
 
-    protected toS3LocationParams(file: S3File): { Bucket: string, Key: string } {
+    @parsed
+    protected toS3LocationParams(@parsedS3File file: S3File): { Bucket: string, Key: string } {
         return {Bucket: file.bucket, Key: file.key};
     }
 
@@ -155,7 +162,8 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
             .map(o => this.toScannedS3File(bucket, o));
     }
 
-    async *list(fileOrFolder: S3File): AsyncIterable<ScannedS3File[]> {
+    @parsed
+    async *list(@parsedS3File fileOrFolder: S3File): AsyncIterable<ScannedS3File[]> {
         const s3 = await this.s3Promise;
         let response: Optional<ListObjectsV2Output> = FpOptional.empty();
         while (!response.exists || !!response.value.NextContinuationToken) {
@@ -172,7 +180,8 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         }
     }
 
-    async waitForFileToExist(file: S3File): Promise<void> {
+    @parsed
+    async waitForFileToExist(@parsedS3File file: S3File): Promise<void> {
         const s3 = await this.s3Promise;
         await s3.waitFor("objectExists", this.toS3LocationParams(file)).promise();
     }

@@ -1,4 +1,3 @@
-import {normalize, sep} from "path";
 import {
     AnyFile,
     CopyOperation,
@@ -12,11 +11,12 @@ import {
     ScannedS3File,
     WriteRequest
 } from "../api";
-import {AbstractFileService} from "../file-service";
-import {S3FileService, S3WriteOptions} from "../s3";
+import {AbstractFileService, isS3File} from "../file-service";
+import {parseS3File, S3FileService, S3WriteOptions} from "../s3";
 import {bimap, Either, fold, left, right} from "fp-ts/lib/Either";
 import {pipe} from "fp-ts/lib/pipeable";
 import {LocalFileService} from "./local-file-service";
+import {parseLocalFile} from "./parse-local-file";
 
 export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions> {
 
@@ -25,7 +25,7 @@ export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions
     }
 
     protected toEither<T extends S3File, L extends LocalFile>(f: AnyFile): Either<T, L> {
-        return this.isS3File(f) ? left(this.toS3File(f)) : right(this.toLocalFile(f));
+        return isS3File(f) ? left(parseS3File(f as S3File) as T) : right(parseLocalFile(f) as L);
     }
 
     waitForFileToExist(file: AnyFile): Promise<void> {
@@ -158,40 +158,6 @@ export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions
             body,
             destination: request.destination
         }, options);
-    }
-
-    protected isS3File(input: AnyFile): boolean {
-        return !!(input as S3File).bucket;
-    }
-
-    protected toLocalPath(s3Key: string): string {
-        return s3Key.split("/").join(sep);
-    }
-
-    protected toLocalFile<T extends LocalFile>(file: AnyFile): T {
-        return this.isS3File(file) ? file as T : {
-            ...file,
-            key: normalize(this.toLocalPath(file.key))
-        } as T;
-    }
-
-    protected toS3File<T extends S3File>(destination: AnyFile): T {
-        return this.isS3File(destination) ? {
-            ...destination,
-            key: this.toS3Key(destination.key)
-        } as T : destination as T;
-    }
-
-    protected replacePathSepsWithForwardSlashes(input: string): string {
-        return input.split(sep).join("/");
-    }
-
-    protected stripPrefixSlash(input: string): string {
-        return input.startsWith("/") ? input.replace("/", "") : input;
-    }
-
-    protected toS3Key(input: string): string {
-        return this.stripPrefixSlash(this.replacePathSepsWithForwardSlashes(input));
     }
 
 }
