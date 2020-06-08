@@ -5,18 +5,18 @@ import {
     CopyRequest,
     defaultConcurrencyOptions,
     defaultCopyOptions,
+    defaultWriteOptions,
     DeleteOptions,
     FileContent,
     LocalFile,
     Optional,
+    OverwriteOptions,
     Scanned,
     WriteRequest
 } from "../api";
 import {ResolveDestinationRequest} from "./resolve-destination-request";
 import {chunksOf} from "fp-ts/lib/Array";
-import {OverwriteOptions} from "../api/overwrite-options";
 import {FpOptional} from "./fp.optional";
-import {defaultWriteOptions} from "../api/default-write-options";
 
 export abstract class AbstractFileService<T extends LocalFile, W> implements GenericFileService<T, W> {
 
@@ -159,7 +159,7 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
         return FpOptional.empty();
     }
 
-    protected abstract copyFile<A extends T, B extends T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
+    abstract copyFile<A extends T, B extends T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
         Promise<void>;
 
     abstract toLocationString(f: T): string;
@@ -168,11 +168,11 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
 
     abstract readFile(file: Scanned<T>): Promise<FileContent>;
 
-    protected abstract waitForFileToExist(f: T): void;
+    abstract waitForFileToExist(f: T): void;
 
-    protected abstract deleteFile(files: Scanned<T>, options: DeleteOptions<T>): Promise<void>;
+    abstract deleteFile(file: Scanned<T>, options: DeleteOptions<T>): Promise<void>;
 
-    protected abstract writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void>;
+    abstract writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void>;
 
     abstract list(fileOrFolder: T): AsyncIterable<Scanned<T>[]>;
 

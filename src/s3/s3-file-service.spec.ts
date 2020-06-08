@@ -1,55 +1,22 @@
 import {S3FileService} from "./s3-file-service";
-import {mkdtempSync} from "fs";
-import {basename, join} from "path";
-import {tmpdir} from "os";
 import del from "del";
-import S3rver from "s3rver";
 import S3 from "aws-sdk/clients/s3";
 import {expect, use} from "chai";
-import {Credentials} from "aws-sdk";
 import axios from "axios";
 import chaiAsPromised from "chai-as-promised";
-import {createHash} from "crypto";
 import {CopyOperation, CopyOptions, FileContent, S3File, Scanned, ScannedS3File} from "../api";
 import {defaultContentType} from "./default-content-type";
 import {getType} from "mime";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
+import {LocalS3Server} from "../../test/local-s3-server";
+import {FileServiceTester} from "../../test/file-service-tester";
+import {S3WriteOptions} from "../../lib/s3";
+import {FpOptional} from "../file-service";
 
 const bucketExistError = "The specified bucket does not exist";
 
-function createTempDir(): string {
-    return mkdtempSync(join(tmpdir(), "fss3-test-")).toString();
-}
-
-async function wipeLocalFolder(localPath: string): Promise<void> {
-    await del([localPath], {force: true});
-}
-
 async function delay(period: number) {
     await new Promise(resolve => setTimeout(resolve, period));
-}
-
-function md5(input: string): string {
-    const hash = createHash("md5");
-    hash.update(input);
-    return hash.digest("hex");
-}
-
-function stringSize(input: string): number {
-    return Buffer.byteLength(input);
-}
-
-type FileInfo = Scanned<{
-    fileName: string;
-}>;
-
-function describeFile(file: ScannedS3File): FileInfo {
-    return {
-        fileName: basename(file.key),
-        md5: file.md5,
-        size: file.size,
-        mimeType: file.mimeType
-    };
 }
 
 describe("S3 file service", function() {
@@ -64,15 +31,6 @@ describe("S3 file service", function() {
         return response.Body.toString();
     }
 
-    async function collectList(folder: S3File): Promise<ScannedS3File[]> {
-        const allFiles = await instance.list(folder);
-        const collectedFiles = [];
-        for await (const files of allFiles) {
-            collectedFiles.push(...files);
-        }
-        return collectedFiles;
-    }
-
     async function uploadFile(file: S3File, content: FileContent) {
         await s3.putObject({
             Bucket: file.bucket,
@@ -83,39 +41,25 @@ describe("S3 file service", function() {
     }
 
     let instance: S3FileService;
-    let s3rver: S3rver;
+    let s3rver: LocalS3Server;
+    let tester: FileServiceTester<S3File, S3WriteOptions>;
     let s3: S3;
-    let localS3Dir: string;
-
-    const port = 4569;
-    const hostname = "localhost";
-    const endpoint = `http://${hostname}:${port}`;
     const testBucket = "foo";
 
     before(async () => {
         use(chaiAsPromised);
-        localS3Dir = createTempDir();
-        s3rver = new S3rver({
-            port,
-            address: hostname,
-            silent: true,
-            directory: localS3Dir
-        });
-        await s3rver.run();
+        s3rver = new LocalS3Server();
+        await s3rver.start();
     });
 
     beforeEach(async () => {
-        (s3rver as any).reset();
-        s3 = new S3({
-            credentials: new Credentials("S3RVER", "S3RVER"),
-            endpoint,
-            sslEnabled: false,
-            s3ForcePathStyle: true
-        });
+        s3rver.reset();
+        s3 = s3rver.createClient();
         await s3.createBucket({
             Bucket: testBucket
         }).promise();
         instance = new S3FileService(s3);
+        tester = new FileServiceTester<S3File, S3WriteOptions>(instance);
     });
 
     describe("List behaviour", () => {
@@ -134,7 +78,7 @@ describe("S3 file service", function() {
         });
 
         it("Throws an error when attempting to list a bucket that doesn't exist", async () => {
-            await expect(collectList({bucket: `${testBucket}bar`, key: ""}))
+            await expect(tester.collectAll({bucket: `${testBucket}bar`, key: ""}))
                 .to.eventually.be.rejectedWith(bucketExistError);
         });
 
@@ -157,19 +101,13 @@ describe("S3 file service", function() {
                 key: "foobar/",
                 bucket: testBucket
             };
-            const initialFiles = await collectList({
-                key: "",
-                bucket: testBucket
-            });
-            await instance.copy({
+            await tester.testCopyList({
                 source: {
                     key: "",
                     bucket: testBucket
                 },
                 destination
-            });
-            const copiedFiles = await collectList(destination);
-            expect(initialFiles.map(describeFile)).to.deep.equal(copiedFiles.map(describeFile))
+            }, {});
         });
     });
 
@@ -213,17 +151,17 @@ describe("S3 file service", function() {
         });
 
         it("Makes a file public", async () => {
-            await expect(instance.write({
+            await tester.testWriteRead({
                 destination: file,
                 body: fileContent
             }, {
                 makePublic: true
-            })).to.eventually.be.fulfilled;
+            });
         });
 
         it("Provides status updates for objects being uploaded", async () => {
             const progressEvents: ManagedUpload.Progress[] = [];
-            await instance.write({
+            await tester.testWriteRead({
                 destination: file,
                 body: fileContent
             }, {
@@ -237,22 +175,26 @@ describe("S3 file service", function() {
             expect(optionalLink.exists).to.equal(false);
         });
 
+        it("Scans file content", async () => {
+            await tester.testWriteScan({
+                destination: file,
+                body: fileContent
+            }, {});
+        });
+
         it("Gets an empty response when trying to read a non-existent file", async () => {
-            const optionalFile = await instance.read(file);
-            expect(optionalFile.exists).to.equal(false);
+            await tester.testRead({bucket: "foo", key: "bar"}, FpOptional.empty());
         });
 
         it("Gets an empty response when trying to scan a non-existent file", async () => {
-            const fileInfo = await instance.scan(file);
-            expect(fileInfo.exists).to.equal(false);
+            await tester.testScan({bucket: "foo", key: "bar"}, FpOptional.empty());
         });
 
         it("Uploads a file", async () => {
-            await instance.write({
+            await tester.testWriteRead({
                 destination: file,
                 body: fileContent
-            });
-            expect(await readFileContent(file)).to.equal(fileContent);
+            }, {});
         });
 
         it("Waits for a file to exist", async () => {
@@ -267,9 +209,7 @@ describe("S3 file service", function() {
             beforeEach(() => uploadFileContent());
 
             it("Reads the file", async () => {
-                const optionalFile = await instance.read(file);
-                expect(optionalFile.exists).to.equal(true, "Should have read a file");
-                expect(optionalFile.value.toString()).to.equal(fileContent);
+                await tester.testRead(file, FpOptional.of(fileContent));
             });
 
             it("Propagates an unexpected error when attempting to scan a file", () => {
@@ -281,18 +221,13 @@ describe("S3 file service", function() {
             });
 
             it("Deletes the file", async () => {
-                await instance.delete(file);
-                const response = await s3.listObjectsV2({
-                    Bucket: testBucket,
-                    Prefix: file.key
-                }).promise();
-                expect(response.Contents).to.deep.equal([]);
+                await tester.testDelete(file, {});
             });
 
             it("Listens for the deleted files", async () => {
-                const deletedFiles: ScannedS3File[] = [];
-                const expectedDeletedFiles = await collectList(file);
-                await instance.delete(file, {
+                const deletedFiles = [];
+                const expectedDeletedFiles = await tester.collectAll(file);
+                await tester.testDelete(file, {
                     listener: f => deletedFiles.push(f)
                 });
                 expect(deletedFiles).to.deep.equal(expectedDeletedFiles);
@@ -305,28 +240,15 @@ describe("S3 file service", function() {
                 expect(response.data.toString()).to.equal(fileContent);
             });
 
-            it("Scans the content of the file", async () => {
-                const fileInfo = await instance.scan(file);
-                expect(fileInfo.exists).to.equal(true);
-                const expectedInfo: ScannedS3File = {
-                    ...file,
-                    md5: md5(fileContent),
-                    size: stringSize(fileContent),
-                    mimeType: contentType
-                }
-                expect(fileInfo.value).to.deep.equal(expectedInfo);
-            });
-
             it("Copies the file to another location", async () => {
                 const destination = {
                     bucket: testBucket,
                     key: "bar/baz/foo.txt"
                 }
-                await instance.copy({
+                await tester.testCopyList({
                     source: file,
                     destination
-                });
-                expect(await readFileContent(destination)).to.equal(fileContent);
+                }, {});
             });
 
             it("Listens to copy operations", async () => {
@@ -335,7 +257,7 @@ describe("S3 file service", function() {
                     bucket: testBucket,
                     key: "baz/foo.txt"
                 }
-                await instance.copy({
+                await tester.testCopyList({
                     source: file,
                     destination
                 }, {
@@ -396,13 +318,13 @@ describe("S3 file service", function() {
 
             it("Doesn't copy a file when the destination is the same", async () => {
                 const copyOperations = [];
-                await instance.copy({
+                await tester.testCopyList({
                     source: file,
                     destination: file
                 }, {
                     overwrite: true,
                     listener: operation => copyOperations.push(operation)
-                });
+                })
                 expect(copyOperations).to.deep.equal([]);
             });
 
@@ -430,8 +352,7 @@ describe("S3 file service", function() {
 
 
     after(async () => {
-        await s3rver.close();
-        await wipeLocalFolder(localS3Dir);
+        await s3rver.stop();
     });
 
 });

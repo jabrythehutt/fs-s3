@@ -1,10 +1,19 @@
 import S3, {GetObjectOutput, HeadObjectOutput, ListObjectsV2Output, PutObjectRequest} from "aws-sdk/clients/s3";
 import {getType} from "mime";
-import {CopyOperation, CopyOptions, FileContent, Optional, S3File, Scanned, ScannedS3File, WriteRequest} from "../api";
+import {
+    CopyOperation,
+    CopyOptions, DeleteOptions,
+    FileContent,
+    Optional,
+    OverwriteOptions,
+    S3File,
+    Scanned,
+    ScannedS3File,
+    WriteRequest
+} from "../api";
 import {defaultContentType} from "./default-content-type";
 import {AbstractFileService, FpOptional} from "../file-service";
 import {S3WriteOptions} from "./s3-write-options";
-import {OverwriteOptions} from "../api/overwrite-options";
 import {defaultS3WriteOptions} from "./default-s3-write-options";
 import {defaultLinkExpiryPeriod} from "./default-link-expiry-period";
 
@@ -22,7 +31,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         this.s3Promise = this.toPromise(s3);
     }
 
-    protected async writeFile(request: WriteRequest<S3File>,
+    async writeFile(request: WriteRequest<S3File>,
                               options: OverwriteOptions & S3WriteOptions): Promise<void> {
         options = {
             ...defaultS3WriteOptions,
@@ -43,7 +52,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         await managedUpload.promise();
     }
 
-    protected async copyFile(request: CopyOperation<S3File, S3File>,
+    async copyFile(request: CopyOperation<S3File, S3File>,
                    options: CopyOptions<S3File, S3File> & S3WriteOptions): Promise<void> {
         const s3 = await this.s3Promise;
         await s3.copyObject({
@@ -65,7 +74,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         }
     }
 
-    protected async deleteFile(file: ScannedS3File): Promise<void> {
+    async deleteFile(file: ScannedS3File, options: DeleteOptions<S3File>): Promise<void> {
         const s3 = await this.s3Promise;
         await s3.deleteObject(this.toS3LocationParams(file)).promise();
     }
@@ -159,7 +168,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         }
     }
 
-    protected async waitForFileToExist(file: S3File): Promise<void> {
+    async waitForFileToExist(file: S3File): Promise<void> {
         const s3 = await this.s3Promise;
         await s3.waitFor("objectExists", this.toS3LocationParams(file)).promise();
     }

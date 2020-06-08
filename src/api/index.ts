@@ -15,4 +15,6 @@ export * from "./scanned-file";
 export * from "./scanned-s3-file";
 export * from "./write-options";
 export * from "./write-request";
+export * from "./overwrite-options";
 export * from "./optional";
+export * from "./default-write-options";
