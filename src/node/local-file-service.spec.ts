@@ -13,7 +13,7 @@ describe("Local file service", () => {
         tester = new FileServiceTester<LocalFile, {}>(instance);
     });
 
-    generateTests("Standard tests", () => ({key: tempDir}), () => tester);
+    generateTests("Standard tests", () => ({key: `${tempDir}/`}), () => tester);
 
     afterEach(() => {
         DirUtils.wipe(tempDir);

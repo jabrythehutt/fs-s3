@@ -51,10 +51,6 @@ export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions
        return this.toDelegate<T>(fileOrFolder).list(fileOrFolder);
     }
 
-    protected existingOnly<T>(items: Optional<T>[]): T[] {
-        return items.filter(item => item.exists).map(item => item.value);
-    }
-
     toLocationString(input: AnyFile): string {
         return this.toDelegate(input).toLocationString(input);
     }

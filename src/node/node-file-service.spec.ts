@@ -46,7 +46,7 @@ describe("Node file service", function() {
             let localFolder: LocalFile;
             beforeEach(() => {
                 localFolder = {
-                    key: DirUtils.createTempDir()
+                    key: `${DirUtils.createTempDir()}/`
                 };
             });
             generateTests("Standard tests", () => localFolder, () => tester);
@@ -55,27 +55,26 @@ describe("Node file service", function() {
             });
 
             describe("Cross-copy tests", () => {
-                let localWriteRequest: WriteRequest<LocalFile>;
-                let s3WriteRequest: WriteRequest<S3File>;
+                let fileGenerator: FileGenerator;
                 beforeEach(() => {
-                    const fileGenerator = new FileGenerator();
-                    [localWriteRequest] = fileGenerator.generateTestFiles(1, localFolder);
-                    [s3WriteRequest] = fileGenerator.generateTestFiles(1, s3Folder);
+                    fileGenerator = new FileGenerator();
                 });
 
-                it("Copies a file from a local to an S3 folder", async () => {
-                    await instance.write(localWriteRequest);
+                it("Copies files from a local to an S3 folder", async () => {
+                    const writeRequests = fileGenerator.generateTestFiles(10, localFolder);
+                    await Promise.all(writeRequests.map(r => instance.write(r)));
                     await tester.testCopyList({
-                        source: localWriteRequest.destination,
-                        destination: s3WriteRequest.destination
+                        source: localFolder,
+                        destination: s3Folder
                     });
                 });
 
-                it("Copies a file from an S3 folder to a local folder", async () => {
-                    await instance.write(s3WriteRequest);
+                it("Copies files from an S3 folder to a local folder", async () => {
+                    const writeRequests = fileGenerator.generateTestFiles(10, s3Folder);
+                    await Promise.all(writeRequests.map(r => instance.write(r)));
                     await tester.testCopyList({
-                        source: s3WriteRequest.destination,
-                        destination: localWriteRequest.destination
+                        source: s3Folder,
+                        destination: localFolder
                     });
                 });
             });
