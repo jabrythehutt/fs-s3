@@ -1,23 +1,17 @@
 import {S3FileService} from "./s3-file-service";
-import del from "del";
 import S3 from "aws-sdk/clients/s3";
 import {expect, use} from "chai";
 import axios from "axios";
 import chaiAsPromised from "chai-as-promised";
-import {CopyOperation, CopyOptions, FileContent, S3File, Scanned, ScannedS3File} from "../api";
+import {CopyOperation, CopyOptions, FileContent, S3File} from "../api";
 import {defaultContentType} from "./default-content-type";
 import {getType} from "mime";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
-import {LocalS3Server} from "../../test/local-s3-server";
-import {FileServiceTester} from "../../test/file-service-tester";
+import {FileServiceTester, LocalS3Server} from "../../test";
 import {S3WriteOptions} from "../../lib/s3";
 import {FpOptional} from "../file-service";
 
 const bucketExistError = "The specified bucket does not exist";
-
-async function delay(period: number) {
-    await new Promise(resolve => setTimeout(resolve, period));
-}
 
 describe("S3 file service", function() {
 
@@ -118,8 +112,6 @@ describe("S3 file service", function() {
             key: "foo/bar/foo.txt",
             bucket: testBucket
         };
-        const contentType = "text/plain";
-
         async function uploadFileContent() {
             await uploadFile(file, fileContent);
         }
@@ -198,11 +190,10 @@ describe("S3 file service", function() {
         });
 
         it("Waits for a file to exist", async () => {
-            const fileExistsPromise = instance.waitForFile(file);
-            await delay(100);
-            await uploadFileContent();
-            await expect(fileExistsPromise).to.eventually.be.fulfilled;
-
+            await tester.testWriteAndWait({
+                destination: file,
+                body: fileContent
+            }, {});
         });
 
         describe("With an S3 object present", () => {

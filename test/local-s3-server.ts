@@ -1,10 +1,8 @@
 import S3rver = require("s3rver");
 import S3 from "aws-sdk/clients/s3";
-import {mkdtempSync} from "fs";
-import {join} from "path";
-import {tmpdir} from "os";
 import {Credentials} from "aws-sdk";
-import del from "del";
+
+import {DirUtils} from "./dir-utils";
 
 export class LocalS3Server {
 
@@ -19,13 +17,9 @@ export class LocalS3Server {
         return `http://${this.hostname}:${this.port}`
     }
 
-    createTempDir(): string {
-        return mkdtempSync(join(tmpdir(), "fss3-test-")).toString();
-    }
-
     async start(): Promise<void> {
         if (!this.s3rver) {
-            this.tempDir = this.createTempDir();
+            this.tempDir = DirUtils.createTempDir();
             this.s3rver = new S3rver({
                 port: this.port,
                 address: this.hostname,
@@ -51,6 +45,6 @@ export class LocalS3Server {
 
     async stop(): Promise<void> {
         await this.s3rver.close();
-        await del([this.tempDir], {force: true});
+        await DirUtils.wipe(this.tempDir);
     }
 }

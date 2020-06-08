@@ -41,6 +41,23 @@ export class FileServiceTester<T extends LocalFile, W> {
         );
     }
 
+    async testReadFile(file: Scanned<T>, expected: FileContent) {
+        const content = await this.fileService.readFile(file);
+        expect(content.toString()).to.equal(expected);
+    }
+
+    async testWriteReadFile(request: WriteRequest<T>, options: WriteOptions & W) {
+        const response = await this.fileService.write(request, options);
+        const writtenFile = response.value;
+        expect(writtenFile).to.be.an("object", "Failed to write the requested file");
+        await this.testReadFile(writtenFile, request.body);
+    }
+
+
+    async delay(period: number): Promise<void> {
+        await new Promise(resolve => setTimeout(resolve, period));
+    }
+
     md5(input: FileContent): string {
         const hash = createHash("md5");
         hash.update(input.toString());
@@ -51,14 +68,18 @@ export class FileServiceTester<T extends LocalFile, W> {
         return Buffer.byteLength(input.toString());
     }
 
-    async testWriteScan(request: WriteRequest<T>, options: WriteOptions & W) {
-        await this.fileService.write(request, options);
-        const expectedScan = FpOptional.of({
+    toScanned(request: WriteRequest<T>): Scanned<T> {
+        return {
             ...request.destination,
             size: this.size(request.body),
             md5: this.md5(request.body),
             mimeType: getType(request.destination.key)
-        });
+        };
+    }
+
+    async testWriteScan(request: WriteRequest<T>, options: WriteOptions & W) {
+        await this.fileService.write(request, options);
+        const expectedScan = FpOptional.of(this.toScanned(request));
         await this.testScan(request.destination, expectedScan);
     }
 
@@ -89,6 +110,20 @@ export class FileServiceTester<T extends LocalFile, W> {
         const sourceFiles = await this.collectAll(request.source);
         await this.fileService.copy(request, options);
         await this.testList(request.destination, sourceFiles.map(f => this.describeFile(f)));
+    }
+
+    async testWriteAndWait(request: WriteRequest<T>, options: WriteOptions & W) {
+        const expectedFile = this.toScanned(request);
+        const waitForFilePromise = this.testWait(request.destination, expectedFile);
+        await this.delay(100);
+        await this.fileService.write(request, options);
+        await waitForFilePromise;
+    }
+
+    async testWait(file: T, expected: Scanned<T>) {
+        const response = await this.fileService.waitForFile(file);
+        expect(response).to.deep.equal(expected,
+            `Didn't get the expected file when waiting for ${this.fileService.toLocationString(file)}`);
     }
 
     async testList(folder: T, expectedFiles: FileInfo[]) {
