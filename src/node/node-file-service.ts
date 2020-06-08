@@ -1,17 +1,24 @@
 import {
     AnyFile,
     CopyOperation,
-    CopyOptions, DeleteOptions,
+    CopyOptions, CopyRequest, DeleteOptions,
     FileContent,
     LocalFile,
-    Optional, OverwriteOptions,
+    Optional, OverwriteOptions, S3File,
     Scanned,
     ScannedFile,
     WriteRequest
 } from "../api";
 import {AbstractFileService, isS3File} from "../file-service";
-import {S3FileService, S3WriteOptions} from "../s3";
+import {parseS3File, S3FileService, S3WriteOptions} from "../s3";
 import {LocalFileService} from "./local-file-service";
+import {parseLocalFile} from "./parse-local-file";
+import {parsedInputRequest} from "../file-service/parsed-input-request";
+import {parsedOutputRequest} from "../file-service/parsed-output-request";
+
+const anyFileParser = (f: AnyFile) => isS3File(f) ? parseS3File(f as S3File) : parseLocalFile(f);
+const anySourceRequest =  parsedInputRequest(anyFileParser);
+const anyDestinationRequest = parsedOutputRequest(anyFileParser);
 
 export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions> {
 
@@ -37,7 +44,7 @@ export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions
     }
 
     async deleteFile<T extends Scanned<LocalFile>>(file: T, options: DeleteOptions<T>): Promise<void> {
-        return this.toDelegate(file).delete(file, options);
+        return this.toDelegate(file).deleteFile(file, options);
     }
 
     list<T extends LocalFile>(fileOrFolder: T): AsyncIterable<Scanned<T>[]> {
@@ -57,8 +64,17 @@ export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions
         return this.toDelegate(request.destination).writeFile(request, options);
     }
 
-    async copyFile<A extends AnyFile, B extends AnyFile>
-    (request: CopyOperation<A, B>, options: CopyOptions<A, B> & S3WriteOptions): Promise<void> {
+    async copy<A extends AnyFile, B extends AnyFile>(
+        @anySourceRequest
+        @anyDestinationRequest request: CopyRequest<A, B>,
+        options?: CopyOptions<A, B> & S3WriteOptions): Promise<void> {
+        return super.copy(request, options);
+    }
+
+    async copyFile<A extends AnyFile, B extends AnyFile>(
+        @anySourceRequest
+        @anyDestinationRequest request: CopyOperation<A, B>,
+        options: CopyOptions<A, B> & S3WriteOptions): Promise<void> {
         const sourceDelegate = await this.toDelegate(request.source);
         const destinationDelegate = await this.toDelegate(request.destination);
         if (sourceDelegate === destinationDelegate) {
