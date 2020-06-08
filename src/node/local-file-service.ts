@@ -28,6 +28,9 @@ import {partition} from "fp-ts/lib/Array";
 import mkdirp from "mkdirp";
 import {parsed} from "../file-service/parsed";
 import {parsedLocalFile} from "./parsed-local-file";
+import {parsedInputRequest} from "../file-service/parsed-input-request";
+import {parseLocalFile} from "./parse-local-file";
+import {parsedOutputRequest} from "../file-service/parsed-output-request";
 
 export class LocalFileService extends AbstractFileService<LocalFile, {}> {
 
@@ -35,7 +38,9 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
         super();
     }
 
-    async copyFile(request: CopyOperation<LocalFile, LocalFile>,
+    @parsed
+    async copyFile(@parsedInputRequest(parseLocalFile)
+                   @parsedOutputRequest(parseLocalFile) request: CopyOperation<LocalFile, LocalFile>,
                    options: CopyOptions<LocalFile, LocalFile>): Promise<void> {
         await this.ensureDirectoryExistence(request.destination);
         copyFileSync(request.source.key, request.destination.key);
@@ -96,7 +101,9 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
         }
     }
 
-    async writeFile(request: WriteRequest<LocalFile>, options: OverwriteOptions): Promise<void> {
+    @parsed
+    async writeFile(@parsedOutputRequest(parseLocalFile) request: WriteRequest<LocalFile>,
+                    options: OverwriteOptions): Promise<void> {
         await this.ensureDirectoryExistence(request.destination);
         writeFileSync(request.destination.key, request.body);
     }

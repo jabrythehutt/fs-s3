@@ -18,3 +18,5 @@ export * from "./write-request";
 export * from "./overwrite-options";
 export * from "./optional";
 export * from "./default-write-options";
+export * from "./input-request";
+export * from "./output-request";
