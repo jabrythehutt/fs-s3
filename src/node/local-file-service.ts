@@ -99,20 +99,27 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
     }
 
     async *list(file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
-        const fileStats = statSync(file.key);
-        if (fileStats.isFile()) {
-            const scannedFiles = [await this.scan(file)];
-            yield this.existingOnly(scannedFiles);
-        } if (fileStats.isDirectory()) {
-            const filePaths = readdirSync(file.key)
-                .map(p => join(file.key, p)).map(key => ({key}));
-            const partitions = partition((p: LocalFile) => statSync(p.key).isFile())(filePaths);
-            const scannedFiles = await Promise.all(partitions.left.map(p => this.scan(p)));
-            yield this.existingOnly(scannedFiles);
-            for(const dir of partitions.right) {
-                yield* this.list(dir);
+        if (existsSync(file.key)) {
+            const fileStats = statSync(file.key);
+
+            if (fileStats.isFile()) {
+
+                const scannedFiles = [await this.scan(file)];
+                yield this.existingOnly(scannedFiles);
+
+            } if (fileStats.isDirectory()) {
+                const filePaths = readdirSync(file.key)
+                    .map(p => join(file.key, p)).map(key => ({key}));
+                const partitions = partition((p: LocalFile) => statSync(p.key).isFile())(filePaths);
+                const scannedFiles = await Promise.all(partitions.right.map(p => this.scan(p)));
+                yield this.existingOnly(scannedFiles);
+                for (const dir of partitions.left) {
+                    yield* this.list(dir);
+                }
             }
         }
+
+        yield [];
     }
 
     async readFile(file: Scanned<LocalFile>): Promise<FileContent> {

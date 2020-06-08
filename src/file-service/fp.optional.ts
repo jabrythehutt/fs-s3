@@ -1,4 +1,4 @@
-import {fromNullable, isSome, Option, toUndefined, map} from "fp-ts/lib/Option";
+import {fromNullable, isSome, Option, toUndefined, map, fold} from "fp-ts/lib/Option";
 import {Optional} from "../api";
 import {pipe} from "fp-ts/lib/pipeable";
 
@@ -26,11 +26,13 @@ export class FpOptional<T> implements Optional<T> {
         return toUndefined(this.subject);
     }
 
-    map<V>(mapper: (f: T) => V): Optional<V> {
+    map<V>(mapper: (f: T) => V, emptyMapper: () => V = () => undefined): Optional<V> {
         return FpOptional.of(pipe(
             this.subject,
-            map(mapper),
-            toUndefined
+            fold(
+                emptyMapper,
+                mapper
+            )
         ));
     }
 }

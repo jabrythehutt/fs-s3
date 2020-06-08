@@ -19,10 +19,10 @@ import {fold, fromNullable} from "fp-ts/lib/Option";
 
 export class FileServiceTester<T extends LocalFile, W> {
 
-    constructor(private fileService: GenericFileService<T, W>) {
+    constructor(readonly fileService: GenericFileService<T, W>) {
     }
 
-    async testWriteRead(request: WriteRequest<T>, options: WriteOptions & W) {
+    async testWriteRead(request: WriteRequest<T>, options?: WriteOptions & W) {
         await this.fileService.write(request, options);
         await this.testRead(request.destination, FpOptional.of(request.body));
     }
@@ -46,7 +46,7 @@ export class FileServiceTester<T extends LocalFile, W> {
         expect(content.toString()).to.equal(expected);
     }
 
-    async testWriteReadFile(request: WriteRequest<T>, options: WriteOptions & W) {
+    async testWriteReadFile(request: WriteRequest<T>, options?: WriteOptions & W) {
         const response = await this.fileService.write(request, options);
         const writtenFile = response.value;
         expect(writtenFile).to.be.an("object", "Failed to write the requested file");
@@ -77,7 +77,7 @@ export class FileServiceTester<T extends LocalFile, W> {
         };
     }
 
-    async testWriteScan(request: WriteRequest<T>, options: WriteOptions & W) {
+    async testWriteScan(request: WriteRequest<T>, options?: WriteOptions & W) {
         await this.fileService.write(request, options);
         const expectedScan = FpOptional.of(this.toScanned(request));
         await this.testScan(request.destination, expectedScan);
@@ -97,22 +97,24 @@ export class FileServiceTester<T extends LocalFile, W> {
         };
     }
 
+    sorter = (f1: T, f2: T) => f1.key.localeCompare(f2.key);
+
     async collectAll(folder: T): Promise<Scanned<T>[]> {
         const list = await this.fileService.list(folder);
         const collectedFiles = [];
         for await (const items of list) {
             collectedFiles.push(...items);
         }
-        return collectedFiles;
+        return collectedFiles.sort(this.sorter);
     }
 
-    async testCopyList<A extends T, B extends T>(request: CopyRequest<A, B>, options: CopyOptions<A, B> & W) {
+    async testCopyList<A extends T, B extends T>(request: CopyRequest<A, B>, options?: CopyOptions<A, B> & W) {
         const sourceFiles = await this.collectAll(request.source);
         await this.fileService.copy(request, options);
         await this.testList(request.destination, sourceFiles.map(f => this.describeFile(f)));
     }
 
-    async testWriteAndWait(request: WriteRequest<T>, options: WriteOptions & W) {
+    async testWriteAndWait(request: WriteRequest<T>, options?: WriteOptions & W) {
         const expectedFile = this.toScanned(request);
         const waitForFilePromise = this.testWait(request.destination, expectedFile);
         await this.delay(100);
@@ -133,14 +135,14 @@ export class FileServiceTester<T extends LocalFile, W> {
             `Didn't find the expected files in ${this.fileService.toLocationString(folder)}`);
     }
 
-    async testDelete(file: T, options: DeleteOptions<T>) {
+    async testDelete(file: T, options?: DeleteOptions<T>) {
         await this.fileService.delete(file, options);
         const matchingFiles = await this.collectAll(file);
         expect(matchingFiles).to.have.lengthOf(0,
             `Didn't expect to find any files in the deleted folder ${this.fileService.toLocationString(file)}`);
     }
 
-    async testWriteDelete(request: WriteRequest<T>, options: WriteOptions & W, deleteOptions: DeleteOptions<T>) {
+    async testWriteDelete(request: WriteRequest<T>, options?: WriteOptions & W, deleteOptions?: DeleteOptions<T>) {
         await this.fileService.write(request, options);
         await this.testDelete(request.destination, deleteOptions);
     }

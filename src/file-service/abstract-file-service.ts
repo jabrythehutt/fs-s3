@@ -81,6 +81,7 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
     async proceedWithCopy<A extends T, B extends T>(operation: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
         Promise<boolean> {
 
+        // TODO: Use a fp-ts pipe to clean up the conditional copy logic
         if (this.sameLocation(operation.source, operation.destination)) {
             return false;
         }
@@ -141,6 +142,7 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
         if (options.overwrite) {
             return this.writeAndScanFile(request, options);
         } else {
+            // TODO: Use a cleaner function way to deal with wrapped optional values
             const existingFile = await this.scan(request.destination);
             if (!existingFile.exists) {
                 return this.writeAndScanFile(request, options);
@@ -152,6 +154,7 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
 
     async read(file: T): Promise<Optional<FileContent>> {
         const scannedFile = await this.scan(file);
+        // TODO: Use a cleaner function way to deal with wrapped optional values
         if (scannedFile.exists) {
            const result = await this.readFile(scannedFile.value);
            return FpOptional.of(result);

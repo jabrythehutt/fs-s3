@@ -7,7 +7,7 @@ import {CopyOperation, CopyOptions, FileContent, S3File} from "../api";
 import {defaultContentType} from "./default-content-type";
 import {getType} from "mime";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
-import {FileServiceTester, LocalS3Server} from "../../test";
+import {FileServiceTester, generateTests, LocalS3Server} from "../../test";
 import {S3WriteOptions} from "../../lib/s3";
 import {FpOptional} from "../file-service";
 
@@ -55,6 +55,8 @@ describe("S3 file service", function() {
         instance = new S3FileService(s3);
         tester = new FileServiceTester<S3File, S3WriteOptions>(instance);
     });
+
+    generateTests("Standard tests", () => ({bucket: testBucket, key: ""}), () => tester);
 
     describe("List behaviour", () => {
         let files: S3File[];
@@ -182,19 +184,6 @@ describe("S3 file service", function() {
             await tester.testScan({bucket: "foo", key: "bar"}, FpOptional.empty());
         });
 
-        it("Uploads a file", async () => {
-            await tester.testWriteRead({
-                destination: file,
-                body: fileContent
-            }, {});
-        });
-
-        it("Waits for a file to exist", async () => {
-            await tester.testWriteAndWait({
-                destination: file,
-                body: fileContent
-            }, {});
-        });
 
         describe("With an S3 object present", () => {
             beforeEach(() => uploadFileContent());
