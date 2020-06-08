@@ -101,9 +101,7 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
     async *list(file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
         if (existsSync(file.key)) {
             const fileStats = statSync(file.key);
-
             if (fileStats.isFile()) {
-
                 const scannedFiles = [await this.scan(file)];
                 yield this.existingOnly(scannedFiles);
 

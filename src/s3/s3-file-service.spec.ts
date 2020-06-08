@@ -3,13 +3,13 @@ import S3 from "aws-sdk/clients/s3";
 import {expect, use} from "chai";
 import axios from "axios";
 import chaiAsPromised from "chai-as-promised";
-import {CopyOperation, CopyOptions, FileContent, S3File} from "../api";
+import {FileContent, S3File} from "../api";
 import {defaultContentType} from "./default-content-type";
 import {getType} from "mime";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
 import {FileServiceTester, generateTests, LocalS3Server} from "../../test";
-import {S3WriteOptions} from "../../lib/s3";
 import {FpOptional} from "../file-service";
+import {S3WriteOptions} from "./s3-write-options";
 
 const bucketExistError = "The specified bucket does not exist";
 
@@ -91,20 +91,6 @@ describe("S3 file service", function() {
             }
             expect(pages.length).to.equal(files.length / itemsPerPage);
         });
-
-        it("Copies all the files from the root into another folder", async () => {
-            const destination = {
-                key: "foobar/",
-                bucket: testBucket
-            };
-            await tester.testCopyList({
-                source: {
-                    key: "",
-                    bucket: testBucket
-                },
-                destination
-            }, {});
-        });
     });
 
     describe("Reading and writing individual files", () => {
@@ -169,22 +155,6 @@ describe("S3 file service", function() {
             expect(optionalLink.exists).to.equal(false);
         });
 
-        it("Scans file content", async () => {
-            await tester.testWriteScan({
-                destination: file,
-                body: fileContent
-            }, {});
-        });
-
-        it("Gets an empty response when trying to read a non-existent file", async () => {
-            await tester.testRead({bucket: "foo", key: "bar"}, FpOptional.empty());
-        });
-
-        it("Gets an empty response when trying to scan a non-existent file", async () => {
-            await tester.testScan({bucket: "foo", key: "bar"}, FpOptional.empty());
-        });
-
-
         describe("With an S3 object present", () => {
             beforeEach(() => uploadFileContent());
 
@@ -200,131 +170,11 @@ describe("S3 file service", function() {
                 expect(instance.scan(file)).to.eventually.be.rejectedWith(errorMessage);
             });
 
-            it("Deletes the file", async () => {
-                await tester.testDelete(file, {});
-            });
-
-            it("Listens for the deleted files", async () => {
-                const deletedFiles = [];
-                const expectedDeletedFiles = await tester.collectAll(file);
-                await tester.testDelete(file, {
-                    listener: f => deletedFiles.push(f)
-                });
-                expect(deletedFiles).to.deep.equal(expectedDeletedFiles);
-            });
-
             it("Gets a valid link for the file", async () => {
                 const link = await instance.getReadUrl(file);
                 expect(link.exists).to.equal(true);
                 const response = await axios.get(link.value);
                 expect(response.data.toString()).to.equal(fileContent);
-            });
-
-            it("Copies the file to another location", async () => {
-                const destination = {
-                    bucket: testBucket,
-                    key: "bar/baz/foo.txt"
-                }
-                await tester.testCopyList({
-                    source: file,
-                    destination
-                }, {});
-            });
-
-            it("Listens to copy operations", async () => {
-                const copyOperations = [];
-                const destination = {
-                    bucket: testBucket,
-                    key: "baz/foo.txt"
-                }
-                await tester.testCopyList({
-                    source: file,
-                    destination
-                }, {
-                    listener: operation => copyOperations.push(operation)
-                });
-                const expectedCopyOperation: CopyOperation<S3File, S3File> = {
-                    source: (await instance.scan(file)).value,
-                    destination
-                };
-                expect(copyOperations).to.deep.equal([expectedCopyOperation]);
-            });
-
-            describe("Copy overwrite behaviour", () => {
-                let destination: S3File;
-                let options: CopyOptions<S3File, S3File>;
-                let copyOperations: CopyOperation<S3File, S3File>[];
-
-                beforeEach(async () => {
-                    destination = {
-                        bucket: testBucket,
-                        key: "foobar.txt"
-                    };
-                    await instance.copy({source: file, destination});
-                    copyOperations = [];
-                    options = {
-                        listener: operation => copyOperations.push(operation)
-                    }
-                });
-
-                it("Overwrites an existing file when copying a file using the overwrite option", async () => {
-                    options.overwrite = true;
-                    await instance.copy({source: file, destination}, options);
-                    expect(copyOperations).to.have.lengthOf(1);
-                });
-
-                it("Doesn't overwrite an existing file when copying a file not set to overwrite", async () => {
-                    options.overwrite = false;
-                    await instance.copy({source: file, destination}, options);
-                    expect(copyOperations).to.have.lengthOf(0);
-                });
-
-                it("Doesn't overwrite identical content when content-based skipping is enabled", async () => {
-                    options.overwrite = true;
-                    options.skipSame = true;
-                    await instance.copy({source: file, destination}, options);
-                    expect(copyOperations).to.have.lengthOf(0);
-                });
-
-                it("Overwrites different content when content-based skipping is enabled", async () => {
-                    options.overwrite = true;
-                    options.skipSame = true;
-                    const otherFile = {bucket: testBucket, key: "otherfile.txt"};
-                    await uploadFile(otherFile, "other content");
-                    await instance.copy({source: otherFile, destination}, options);
-                    expect(copyOperations).to.have.lengthOf(1);
-                });
-            });
-
-            it("Doesn't copy a file when the destination is the same", async () => {
-                const copyOperations = [];
-                await tester.testCopyList({
-                    source: file,
-                    destination: file
-                }, {
-                    overwrite: true,
-                    listener: operation => copyOperations.push(operation)
-                })
-                expect(copyOperations).to.deep.equal([]);
-            });
-
-
-            describe("Overwrite behaviour", () => {
-                const newContent = `${fileContent}bar`;
-                it("Doesn't overwrite an existing file when the overwrite option is false", async () => {
-                    await instance.write({
-                        destination: file,
-                        body: newContent
-                    }, {overwrite: false});
-                    expect(await readFileContent(file)).to.equal(fileContent);
-                });
-                it("Overwrites an existing file when the overwrite option is true", async () => {
-                    await instance.write({
-                        destination: file,
-                        body: `${fileContent}bar`
-                    }, {overwrite: true});
-                    expect(await readFileContent(file)).to.equal(newContent);
-                });
             });
         });
     });
