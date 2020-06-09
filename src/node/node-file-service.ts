@@ -1,11 +1,7 @@
-import {
-    LocalFile,
-    S3File,
-} from "../api";
-import {AbstractFileService, isS3File} from "../file-service";
+import {LocalFile, S3File,} from "../api";
+import {AbstractFileService, isS3File, PolyFileService} from "../file-service";
 import {S3FileService, S3WriteOptions} from "../s3";
 import {LocalFileService} from "./local-file-service";
-import {PolyFileService} from "../file-service/poly-file-service";
 
 export class NodeFileService extends PolyFileService<LocalFile, S3File, S3WriteOptions> {
 
