@@ -1,7 +1,7 @@
 {
-  "name": "@djabry/fs-s3",
+  "name": "@jabrythehutt/fs-s3",
   "version": "0.3.14",
-  "description": "Yet another AWS S3 wrapper to simplify your life",
+  "description": "Simplifies the application storage layer",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
