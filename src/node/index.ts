@@ -1,2 +1,2 @@
 export * from "./node-file-service";
-export * from "./parse-local-file";
+export * from "./local-file-service";

@@ -20,4 +20,5 @@ export interface GenericFileService<T extends LocalFile, W = unknown> {
     readFile(file: Scanned<T>): Promise<FileContent>;
     waitForFile<F extends T = T>(file: F): Promise<Scanned<F>>;
     toLocationString(file: T): string;
+    parse<F extends T>(file: F): F;
 }

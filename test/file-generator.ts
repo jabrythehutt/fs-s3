@@ -1,11 +1,15 @@
 import {LocalFile, WriteRequest} from "../src/api";
 import {join} from "path";
+import {GenericFileService} from "../src/file-service";
 
-export class FileGenerator {
+export class FileGenerator<T extends LocalFile> {
 
-    generateTestFiles<T extends LocalFile>(numberToGenerate: number, folder: T): WriteRequest<T>[] {
+    constructor(private fileService: GenericFileService<T>) {
+    }
+
+    generateTestFiles<F extends T>(numberToGenerate: number, folder: F): WriteRequest<F>[] {
         return Array.from(new Array(numberToGenerate), () => ({
-            destination: this.randomSubFile(folder),
+            destination: this.randomSubFile<F>(folder),
             body: this.randomString()
         }));
     }
@@ -14,7 +18,7 @@ export class FileGenerator {
      * Adapted from https://lowrey.me/permutation-with-an-es6-javascript-generator-2/
      * @param elements
      */
-    *permutations<T>(elements: T[]): Iterable<T[]> {
+    *permutations<F extends T>(elements: F[]): Iterable<F[]> {
         if (elements.length === 1) {
             yield elements;
         } else {
@@ -33,13 +37,13 @@ export class FileGenerator {
         return Math.random().toString(36).substring(7);
     }
 
-    randomSubFile<T extends LocalFile>(folder: T): T {
+    randomSubFile<F extends T>(folder: F): F {
         const pathParts = Array.from(new Array(Math.ceil(Math.random() * 10)),
             () => this.randomString());
-        return {
+        return this.fileService.parse({
             ...folder,
             key: `${join(folder.key, ...pathParts)}.txt`
-        }
+        })
 
     }
 }
