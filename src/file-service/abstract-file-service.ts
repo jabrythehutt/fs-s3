@@ -17,7 +17,7 @@ import {
 import {ResolveDestinationRequest} from "./resolve-destination-request";
 import {FpOptional} from "./fp-optional";
 
-export abstract class AbstractFileService<T extends LocalFile, W = {}> implements GenericFileService<T, W> {
+export abstract class AbstractFileService<T extends LocalFile, W = unknown> implements GenericFileService<T, W> {
 
     async copy<A extends T = T, B extends T = T>(request: CopyRequest<A, B>, options?: CopyOptions<A, B> & W):
         Promise<void> {

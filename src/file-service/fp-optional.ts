@@ -1,4 +1,4 @@
-import {fromNullable, isSome, Option, toUndefined, map, fold} from "fp-ts/lib/Option";
+import {fold, fromNullable, isSome, Option, toUndefined} from "fp-ts/lib/Option";
 import {Optional} from "../api";
 import {pipe} from "fp-ts/lib/pipeable";
 

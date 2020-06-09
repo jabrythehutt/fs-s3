@@ -1,8 +1,13 @@
+import {GenericFileService} from "../../lib/file-service";
+import {LocalFile} from "../api";
+
 export class FileParser {
 
-    private static parseFileMap: Map<any, Map<string, Map<number, ((t) => any)[]>>> = new Map();
+    private static parseFileMap: Map<GenericFileService<LocalFile>,
+        Map<string, Map<number, (<T>(t: T) => T)[]>>> = new Map();
 
-    static registerArgToParse<T>(target: any, methodName: string, paramIndex: number, mapper: (t: T) => T): void {
+    static registerArgToParse<T extends LocalFile, A>(target: GenericFileService<T>, methodName: string,
+                              paramIndex: number, mapper: (t: A) => A): void {
         const m = this.parseFileMap.get(target) || new Map();
         this.parseFileMap.set(target, m);
         const indexes = m.get(methodName) || new Map();
@@ -12,15 +17,17 @@ export class FileParser {
         mappers.push(mapper);
     }
 
-    static identity = <T>(t: T) => t;
+    static identity = <T>(t: T): T => t;
 
-    static getArgMappers<T>(target: any, methodName: string, argIndex: number): ((t: T) => T)[] {
+    static getArgMappers<T extends LocalFile, W>(target: GenericFileService<T, W>,
+                                                 methodName: string,
+                                                 argIndex: number): (<A>(t: A) => A)[] {
         return (this.parseFileMap.get(target)?.get(methodName)?.get(argIndex)) || [this.identity];
     }
 
-    static parseArgs(target: any, methodName: string, paramValues: any[]): any[] {
+    static parseArgs<T extends LocalFile, W, A>(target: GenericFileService<T, W>, methodName: string, paramValues: A[]): A[] {
         return paramValues.map((v, index) => {
-            const mappers = this.getArgMappers(target, methodName, index);
+            const mappers = this.getArgMappers<T, W>(target, methodName, index);
             return mappers.reduce((arg, mapper) => mapper(arg), v);
         });
 

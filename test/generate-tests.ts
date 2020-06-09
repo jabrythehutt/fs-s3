@@ -1,14 +1,15 @@
-import {CopyOperation, CopyOptions, DeleteOptions, LocalFile, S3File, WriteOptions, WriteRequest} from "../src/api";
+import {CopyOperation, CopyOptions, DeleteOptions, LocalFile, WriteOptions, WriteRequest} from "../src/api";
 import {FileServiceTester} from "./file-service-tester";
 import {FileGenerator} from "./file-generator";
 import {FpOptional} from "../src/file-service";
 import {Scanned} from "../lib/api";
 import {expect} from "chai";
 import {join} from "path";
+import {Suite} from "mocha";
 
-export function generateTests<F extends LocalFile, W>(name: string,
+export const generateTests = <F extends LocalFile, W>(name: string,
                                                       folderFactory: () => F,
-                                                      testerFactory: () => FileServiceTester<F, W>) {
+                                                      testerFactory: () => FileServiceTester<F, W>): Suite => {
     const fileGenerator = new FileGenerator();
     return describe(name, () => {
         let tester: FileServiceTester<F, W>;
@@ -87,11 +88,11 @@ export function generateTests<F extends LocalFile, W>(name: string,
                 await tester.fileService.write(writeRequest);
                 const options = {
                     listener: o => copyOperations.push(o)
-                }
+                } as CopyOptions<F, F>;
                 await tester.fileService.copy({
                     source:writeRequest.destination,
                     destination: destinationRequest.destination
-                }, options as CopyOptions<F, F> & any);
+                }, options as CopyOptions<F, F> & W);
                 const expectedCopyOperation: CopyOperation<F, F> = {
                     source: tester.toScanned(writeRequest),
                     destination: destinationRequest.destination
@@ -186,4 +187,4 @@ export function generateTests<F extends LocalFile, W>(name: string,
             });
         });
     });
-}
+};

@@ -2,7 +2,8 @@ import S3, {GetObjectOutput, HeadObjectOutput, ListObjectsV2Output, PutObjectReq
 import {getType} from "mime";
 import {
     CopyOperation,
-    CopyOptions, CopyRequest, DeleteOptions,
+    CopyOptions,
+    CopyRequest,
     FileContent,
     Optional,
     OverwriteOptions,
@@ -31,7 +32,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
      * @param s3 - {S3 | Promise<S3>} Either an s3 object or a promise of one
      * @param maxListItemsPerPage - The maximum number of list items to return in one list page
      */
-    constructor(s3: S3 | Promise<S3>, protected maxListItemsPerPage = 10000) {
+    constructor(s3: S3 | Promise<S3>, protected maxListItemsPerPage = 1000) {
         super();
         this.s3Promise = this.toPromise(s3);
     }
@@ -96,7 +97,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     }
 
     @parsed
-    async deleteFile(@parsedS3File file: ScannedS3File, options: DeleteOptions<S3File>): Promise<void> {
+    async deleteFile(@parsedS3File file: ScannedS3File): Promise<void> {
         const s3 = await this.s3Promise;
         await s3.deleteObject(this.toS3LocationParams(file)).promise();
     }
@@ -104,7 +105,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     @parsed
     async readFile(@parsedS3File file: Scanned<S3File>): Promise<FileContent> {
         const response = await this.getObject(file);
-        return response.Body;
+        return response.Body as FileContent;
     }
 
     protected async toPromise<T>(input: T | Promise<T>): Promise<T> {

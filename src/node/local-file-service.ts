@@ -1,15 +1,5 @@
 import {AbstractFileService, FpOptional} from "../file-service";
-import {
-    CopyOperation,
-    CopyOptions,
-    DeleteOptions,
-    FileContent,
-    LocalFile,
-    Optional,
-    OverwriteOptions,
-    Scanned,
-    WriteRequest
-} from "../api";
+import {CopyOperation, FileContent, LocalFile, Optional, Scanned, WriteRequest} from "../api";
 import {
     copyFileSync,
     createReadStream,
@@ -32,7 +22,7 @@ import {parsedInputRequest} from "../file-service/parsed-input-request";
 import {parseLocalFile} from "./parse-local-file";
 import {parsedOutputRequest} from "../file-service/parsed-output-request";
 
-export class LocalFileService extends AbstractFileService<LocalFile, {}> {
+export class LocalFileService extends AbstractFileService<LocalFile> {
 
     constructor(private pollPeriod: number = 100) {
         super();
@@ -40,8 +30,7 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
 
     @parsed
     async copyFile(@parsedInputRequest(parseLocalFile)
-                   @parsedOutputRequest(parseLocalFile) request: CopyOperation<LocalFile, LocalFile>,
-                   options: CopyOptions<LocalFile, LocalFile>): Promise<void> {
+                   @parsedOutputRequest(parseLocalFile) request: CopyOperation<LocalFile, LocalFile>): Promise<void> {
         await this.ensureDirectoryExistence(request.destination);
         copyFileSync(request.source.key, request.destination.key);
     }
@@ -53,7 +42,7 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
     }
 
     @parsed
-    async deleteFile(@parsedLocalFile file: Scanned<LocalFile>, options: DeleteOptions<LocalFile>): Promise<void> {
+    async deleteFile(@parsedLocalFile file: Scanned<LocalFile>): Promise<void> {
         unlinkSync(file.key);
     }
 
@@ -102,8 +91,7 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
     }
 
     @parsed
-    async writeFile(@parsedOutputRequest(parseLocalFile) request: WriteRequest<LocalFile>,
-                    options: OverwriteOptions): Promise<void> {
+    async writeFile(@parsedOutputRequest(parseLocalFile) request: WriteRequest<LocalFile>): Promise<void> {
         await this.ensureDirectoryExistence(request.destination);
         writeFileSync(request.destination.key, request.body);
     }
