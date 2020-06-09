@@ -100,12 +100,11 @@ export class FileServiceTester<T extends LocalFile, W> {
     sorter = (f1: T, f2: T) => f1.key.localeCompare(f2.key);
 
     async collectAll(folder: T): Promise<Scanned<T>[]> {
-        const list = await this.fileService.list(folder);
-        const collectedFiles = [];
-        for await (const items of list) {
-            collectedFiles.push(...items);
+        const collection = [];
+        for await (const item of this.fileService.list(folder)) {
+            collection.push(item);
         }
-        return collectedFiles.sort(this.sorter);
+        return collection.sort(this.sorter);
     }
 
     async testCopyList<A extends T, B extends T>(request: CopyRequest<A, B>, options?: CopyOptions<A, B> & W) {

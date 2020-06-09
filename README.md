@@ -13,7 +13,7 @@ I found myself re-implementing the following procedures in various projects:
 * Skip existing files
 * Delete files in an S3 folder
 
-This module makes these operations quicker without 
+This project aims to make it easier and safer to write your S3-based storage layer.
 
 ## Usage
 

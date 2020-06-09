@@ -8,7 +8,10 @@
     "compile": "tsc",
     "clean": "del-cli 'lib', 'dist'",
     "test": "nyc mocha mocha \"src/**/*.spec.ts\"",
-    "deploy": "npm run clean && npm run compile && npm run test && npm version patch -m \"Bumped version to %s [ci skip]\" && npm publish --access public && git push && git push --tags"
+    "postpublish": "git push origin --all; git push origin --tags",
+    "postversion": "npm publish",
+    "preversion": "npm test",
+    "deploy": "npm run clean && npm run compile && npm version patch -m \"Bumped version to %s [ci skip]\""
   },
   "repository": {
     "type": "git",

@@ -47,7 +47,7 @@ export class NodeFileService extends AbstractFileService<AnyFile, S3WriteOptions
         return this.toDelegate(file).deleteFile(file, options);
     }
 
-    list<T extends LocalFile>(fileOrFolder: T): AsyncIterable<Scanned<T>[]> {
+    list<T extends LocalFile>(fileOrFolder: T): AsyncIterable<Scanned<T>> {
        return this.toDelegate<T>(fileOrFolder).list(fileOrFolder);
     }
 

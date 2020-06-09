@@ -15,23 +15,35 @@ import {
     WriteRequest
 } from "../api";
 import {ResolveDestinationRequest} from "./resolve-destination-request";
-import {chunksOf} from "fp-ts/lib/Array";
 import {FpOptional} from "./fp-optional";
 
 export abstract class AbstractFileService<T extends LocalFile, W> implements GenericFileService<T, W> {
 
-    async copy<A extends T, B extends T>(request: CopyRequest<A, B>, options?: CopyOptions<A, B> & W): Promise<void> {
+    async copy<A extends T = T, B extends T = T>(request: CopyRequest<A, B>, options?: CopyOptions<A, B> & W):
+        Promise<void> {
         options = {
             ...defaultCopyOptions,
             ...options
         };
-        const sourceFilesIterator = this.list(request.source);
-        for await (const sourceFiles of sourceFilesIterator) {
-            await this.copyFiles(request, sourceFiles, options);
-        }
+        await this.processList(this.list(request.source), async source => {
+            const operation = {
+                destination: this.toDestination({
+                    source,
+                    destinationFolder: request.destination,
+                    sourceFolder: request.source.key
+                }),
+                source
+            };
+            if (await this.proceedWithCopy(operation, options)) {
+                await this.copyFile<A, B>(operation, options);
+                if (options.listener) {
+                    options.listener(operation);
+                }
+            }
+        }, options.concurrency);
     }
 
-    protected async copyFiles<A extends T, B extends T>(request: CopyRequest<A, B>,
+    protected async copyFiles<A extends T = T, B extends T = T>(request: CopyRequest<A, B>,
                                               sourceFiles: Scanned<A>[],
                                               options: CopyOptions<A, B> & W): Promise<void> {
         const copyOperations = sourceFiles.map(source => ({
@@ -43,17 +55,14 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
             source
         }));
 
-        const chunks = chunksOf(options.concurrency)(copyOperations);
-        for (const chunk of chunks) {
-            await Promise.all(chunk.map(async operation => {
-                if (await this.proceedWithCopy(operation, options)) {
-                    await this.copyFile<A, B>(operation, options);
-                    if (options.listener) {
-                        options.listener(operation);
-                    }
+        await Promise.all(copyOperations.map(async operation => {
+            if (await this.proceedWithCopy(operation, options)) {
+                await this.copyFile<A, B>(operation, options);
+                if (options.listener) {
+                    options.listener(operation);
                 }
-            }));
-        }
+            }
+        }));
     }
 
     sameLocation(f1: T, f2: T): boolean {
@@ -65,11 +74,11 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
     }
 
 
-    protected willAlwaysOverwrite<A extends T, B extends T>(options: CopyOptions<A, B> & W): boolean {
+    protected willAlwaysOverwrite<A extends T = T, B extends T = T>(options: CopyOptions<A, B> & W): boolean {
         return options.overwrite && !options.skipSame;
     }
 
-    protected overwriteDestination<A extends T, B extends T>(sourceFile: Scanned<A>,
+    protected overwriteDestination<A extends T = T, B extends T = T>(sourceFile: Scanned<A>,
                                                    destination: Scanned<B>,
                                                    options: CopyOptions<A, B> & W): boolean {
         if (!options.overwrite) {
@@ -78,8 +87,8 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
         return !(this.sameContent(sourceFile, destination) && options.skipSame);
     }
 
-    async proceedWithCopy<A extends T, B extends T>(operation: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
-        Promise<boolean> {
+    async proceedWithCopy<A extends T = T, B extends T = T>(operation: CopyOperation<A, B>,
+                                                            options: CopyOptions<A, B> & W): Promise<boolean> {
 
         // TODO: Use a fp-ts pipe to clean up the conditional copy logic
         if (this.sameLocation(operation.source, operation.destination)) {
@@ -103,38 +112,53 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
         };
     }
 
+    protected async processList<V> (iterable: AsyncIterable<V>,
+                                   processor: (item: V) => Promise<void>,
+                                   concurrency: number): Promise<void> {
+        // TODO Find a cleaner way of creating batches from async iterators
+        let batch = [];
+        const flushBatch = async () => {
+            await Promise.all(batch.map(v => processor(v)));
+            batch = [];
+        }
+        for await (const item of iterable) {
+            batch.push(item);
+            if (batch.length >= concurrency) {
+                await flushBatch();
+            }
+        }
+        await flushBatch();
+
+
+    }
+
     async delete(fileOrFolder: T, options?: DeleteOptions<T>): Promise<void> {
         options = {
             ...defaultConcurrencyOptions,
             ...options
         };
-        const iterator = this.list(fileOrFolder);
-        for await (const batch of iterator) {
-            const chunks = chunksOf(options.concurrency)(batch);
-            for (const chunk of chunks) {
-                await Promise.all(chunk.map(async f => {
-                    await this.deleteFile(f, options);
-                    if (options.listener) {
-                        options.listener(f);
-                    }
-                }));
+        await this.processList(this.list(fileOrFolder), async f => {
+            await this.deleteFile(f, options);
+            if (options.listener) {
+                options.listener(f);
             }
-        }
+        }, options.concurrency);
     }
 
-    async waitForFile(file: T): Promise<Scanned<T>> {
+    async waitForFile<F extends T = T>(file: F): Promise<Scanned<F>> {
         await this.waitForFileToExist(file);
         const result = await this.scan(file);
         return result.value;
     }
 
-    protected async writeAndScanFile(request: WriteRequest<T>,
-                                     options: OverwriteOptions & W): Promise<Optional<Scanned<T>>> {
+    protected async writeAndScanFile<F extends T>(request: WriteRequest<F>,
+                                     options: OverwriteOptions & W): Promise<Optional<Scanned<F>>> {
         await this.writeFile(request, options);
         return this.scan(request.destination);
     }
 
-    async write(request: WriteRequest<T>, options?: OverwriteOptions & W): Promise<Optional<Scanned<T>>> {
+    async write<F extends T = T>(request: WriteRequest<F>, options?: OverwriteOptions & W):
+        Promise<Optional<Scanned<F>>> {
         options = {
             ...defaultWriteOptions,
             ...options,
@@ -162,12 +186,12 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
         return FpOptional.empty();
     }
 
-    abstract copyFile<A extends T, B extends T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
+    abstract copyFile<A extends T = T, B extends T = T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
         Promise<void>;
 
     abstract toLocationString(f: T): string;
 
-    abstract scan(f: T): Promise<Optional<Scanned<T>>>;
+    abstract scan<F extends T = T>(f: F): Promise<Optional<Scanned<F>>>;
 
     abstract readFile(file: Scanned<T>): Promise<FileContent>;
 
@@ -177,6 +201,6 @@ export abstract class AbstractFileService<T extends LocalFile, W> implements Gen
 
     abstract writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void>;
 
-    abstract list(fileOrFolder: T): AsyncIterable<Scanned<T>[]>;
+    abstract list<F extends T = T>(fileOrFolder: F): AsyncIterable<Scanned<F>>;
 
 }

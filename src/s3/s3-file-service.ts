@@ -82,7 +82,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
 
     @parsed
-    async scan(@parsedS3File file: S3File): Promise<Optional<ScannedS3File>> {
+    async scan<F extends S3File>(@parsedS3File file: F): Promise<Optional<Scanned<F>>> {
         const s3 = await this.s3Promise;
         try {
             const info = await s3.headObject(this.toS3LocationParams(file)).promise();
@@ -111,14 +111,14 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         return input;
     }
 
-    protected toScannedS3File(bucket: string, item: S3.Object): ScannedS3File {
+    protected toScannedS3File<T extends S3File>(bucket: string, item: S3.Object): Scanned<T> {
         return {
             bucket,
             key: item.Key,
             md5: JSON.parse(item.ETag),
             size: item.Size,
             mimeType: getType(item.Key)
-        };
+        } as Scanned<T>;
     }
 
     @parsed
@@ -143,7 +143,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     }
 
     @parsed
-    protected headResponseToFileInfo(@parsedS3File file: S3File, response: HeadObjectOutput): ScannedS3File {
+    protected headResponseToFileInfo<F extends S3File>(@parsedS3File file: F, response: HeadObjectOutput): Scanned<F> {
         return {
             ...file,
             size: response.ContentLength,
@@ -177,14 +177,14 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         return {Bucket: file.bucket, Key: file.key};
     }
 
-    protected toFiles(bucket: string, response: ListObjectsV2Output): ScannedS3File[] {
+    protected toFiles<T extends S3File>(bucket: string, response: ListObjectsV2Output): Scanned<T>[] {
         return response.Contents
             .filter(o => !o.Key.endsWith("/"))
             .map(o => this.toScannedS3File(bucket, o));
     }
 
     @parsed
-    async* list(@parsedS3File fileOrFolder: S3File): AsyncIterable<ScannedS3File[]> {
+    async* list<T extends S3File>(@parsedS3File fileOrFolder: T): AsyncIterable<Scanned<T>> {
         const s3 = await this.s3Promise;
         let response: Optional<ListObjectsV2Output> = FpOptional.empty();
         while (!response.exists || !!response.value.NextContinuationToken) {
@@ -197,7 +197,10 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
                 Prefix: fileOrFolder.key,
                 Bucket: fileOrFolder.bucket
             }).promise());
-            yield this.toFiles(fileOrFolder.bucket, response.value);
+            const files = this.toFiles<T>(fileOrFolder.bucket, response.value);
+            for (const file of files) {
+                yield file;
+            }
         }
     }
 
