@@ -16,5 +16,6 @@ jobs:
           paths:
             - node_modules
           key: fs-s3-{{ checksum "package-lock.json" }}
+      - run: npm run compile
       - run: npm run test
       - run: ./cc-test-reporter after-build --exit-code $?

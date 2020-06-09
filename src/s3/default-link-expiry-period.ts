@@ -1,0 +1,1 @@
+export const defaultLinkExpiryPeriod = 60 * 60 * 24;
