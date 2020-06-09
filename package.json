@@ -9,7 +9,7 @@
     "clean": "del-cli 'lib', 'dist'",
     "test": "nyc mocha mocha \"src/**/*.spec.ts\"",
     "postpublish": "git push origin --all; git push origin --tags",
-    "postversion": "npm publish",
+    "postversion": "npm publish --access=public",
     "preversion": "npm test",
     "deploy": "npm run clean && npm run compile && npm version patch -m \"Bumped version to %s [ci skip]\""
   },
