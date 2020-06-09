@@ -3,7 +3,6 @@ import {getType} from "mime";
 import {
     CopyOperation,
     CopyOptions,
-    CopyRequest,
     FileContent,
     Optional,
     OverwriteOptions,
@@ -35,15 +34,6 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     constructor(s3: S3 | Promise<S3>, protected maxListItemsPerPage = 1000) {
         super();
         this.s3Promise = this.toPromise(s3);
-    }
-
-    @parsed
-    async copy<A extends S3File, B extends S3File>(
-        @parsedInputRequest(parseS3File)
-        @parsedOutputRequest(parseS3File)
-        request: CopyRequest<A, B>,
-        options?: CopyOptions<A, B> & S3WriteOptions): Promise<void> {
-        return super.copy(request, options);
     }
 
     @parsed
