@@ -1,7 +1,16 @@
-import {CopyOptions, CopyRequest, DeleteOptions, FileContent, LocalFile, Optional, Scanned, WriteRequest} from "../api";
-import {OverwriteOptions} from "../api";
+import {
+    CopyOptions,
+    CopyRequest,
+    DeleteOptions,
+    FileContent,
+    LocalFile,
+    Optional,
+    OverwriteOptions,
+    Scanned,
+    WriteRequest
+} from "../api";
 
-export interface GenericFileService<T extends LocalFile, W = {}> {
+export interface GenericFileService<T extends LocalFile, W = unknown> {
     list<F extends T = T>(fileOrFolder: F): AsyncIterable<Scanned<F>>;
     copy<A extends T = T, B extends T = T>(request: CopyRequest<A, B>, options?: CopyOptions<A, B> & W): Promise<void>;
     delete(fileOrFolder: T, options?: DeleteOptions<T>): Promise<void>;

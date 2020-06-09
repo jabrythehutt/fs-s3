@@ -8,7 +8,7 @@ export class LocalS3Server {
 
     private tempDir: string;
     private s3rver: S3rver;
-    private hostname: string = "localhost";
+    private hostname = "localhost";
 
     constructor(private port: number = 4569) {
     }
@@ -39,8 +39,8 @@ export class LocalS3Server {
         });
     }
 
-    reset() {
-        (this.s3rver as any).reset();
+    reset(): void {
+        (this.s3rver as S3rver & {reset: () => void}).reset();
     }
 
     async stop(): Promise<void> {

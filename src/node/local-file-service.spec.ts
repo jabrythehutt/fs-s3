@@ -3,14 +3,14 @@ import {DirUtils, FileServiceTester, generateTests} from "../../test";
 import {LocalFile} from "../api";
 
 describe("Local file service", () => {
-    let tester: FileServiceTester<LocalFile, {}>;
+    let tester: FileServiceTester<LocalFile>;
     let tempDir: string;
     let instance: LocalFileService;
 
     beforeEach(() => {
         tempDir = DirUtils.createTempDir();
         instance = new LocalFileService();
-        tester = new FileServiceTester<LocalFile, {}>(instance);
+        tester = new FileServiceTester<LocalFile>(instance);
     });
 
     generateTests("Standard tests", () => ({key: `${tempDir}/`}), () => tester);

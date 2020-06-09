@@ -17,14 +17,6 @@ describe("S3 file service", function() {
 
     this.timeout(10000);
 
-    async function readFileContent(file: S3File): Promise<string> {
-        const response = await s3.getObject({
-            Bucket: file.bucket,
-            Key: file.key
-        }).promise();
-        return response.Body.toString();
-    }
-
     async function uploadFile(file: S3File, content: FileContent) {
         await s3.putObject({
             Bucket: file.bucket,

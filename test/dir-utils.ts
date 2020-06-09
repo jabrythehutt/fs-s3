@@ -8,7 +8,7 @@ export class DirUtils {
         return mkdtempSync(join(tmpdir(), prefix)).toString();
     }
 
-    static async wipe(dir: string) {
+    static async wipe(dir: string): Promise<void> {
         await del([dir], {force: true});
     }
 }
