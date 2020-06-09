@@ -3,7 +3,7 @@ import {DirUtils, FileServiceTester, generateTests, LocalS3Server} from "../../t
 import * as S3 from "aws-sdk/clients/s3";
 import {LocalFileService} from "./local-file-service";
 import {S3FileService} from "../s3";
-import {AnyFile, LocalFile, S3File, WriteRequest} from "../api";
+import {AnyFile, LocalFile, S3File} from "../api";
 import {FileGenerator} from "../../test/file-generator";
 
 describe("Node file service", function() {
