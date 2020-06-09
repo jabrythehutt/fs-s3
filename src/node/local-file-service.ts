@@ -1,4 +1,4 @@
-import {AbstractFileService, FpOptional} from "../file-service";
+import {AbstractFileService, FpOptional, parsedInputRequest, parsedOutputRequest} from "../file-service";
 import {CopyOperation, FileContent, LocalFile, Optional, Scanned, WriteRequest} from "../api";
 import {
     copyFileSync,
@@ -6,6 +6,7 @@ import {
     existsSync,
     readdirSync,
     readFileSync,
+    Stats,
     statSync,
     unlinkSync,
     writeFileSync
@@ -18,9 +19,9 @@ import {partition} from "fp-ts/lib/Array";
 import mkdirp from "mkdirp";
 import {parsed} from "../file-service/parsed";
 import {parsedLocalFile} from "./parsed-local-file";
-import {parsedInputRequest} from "../file-service/parsed-input-request";
 import {parseLocalFile} from "./parse-local-file";
-import {parsedOutputRequest} from "../file-service/parsed-output-request";
+import {Separated} from "fp-ts/lib/Compactable";
+import {PathStats} from "./path-stats";
 
 export class LocalFileService extends AbstractFileService<LocalFile> {
 
@@ -100,28 +101,41 @@ export class LocalFileService extends AbstractFileService<LocalFile> {
         return items.filter(item => item.exists).map(item => item.value);
     }
 
+    toPathStats<T extends LocalFile>(file: T): PathStats<T> {
+        return {file: file, stats: statSync(file.key)};
+    }
+
+    protected toFilesAndFolders<T extends LocalFile>(files: T[]): Separated<PathStats<T>[], PathStats<T>[]> {
+        const isFile = (stats: Stats) => stats.isFile();
+        const isValid = (stats: Stats) => stats.isDirectory() || isFile(stats);
+        const validPathStats = files
+            .filter(f => existsSync(f.key))
+            .map(f => this.toPathStats(f))
+            .filter(pathStats => isValid(pathStats.stats));
+        return partition((s: PathStats<T>) => isFile(s.stats))(validPathStats);
+    }
+
     @parsed
-    async *list<F extends LocalFile>(@parsedLocalFile file: F): AsyncIterable<Scanned<F>> {
-        if (existsSync(file.key)) {
-            const fileStats = statSync(file.key);
-            if (fileStats.isFile()) {
-                const scanned = await this.scan(file);
-                if (scanned.exists) {
-                    yield scanned.value;
-                }
-            } if (fileStats.isDirectory()) {
-                const filePaths = readdirSync(file.key)
-                    .map(p => join(file.key, p)).map(key => ({key} as F));
-                const partitions = partition((p: F) => statSync(p.key).isFile())(filePaths);
-                const scannedFiles = await Promise.all(partitions.right.map(p => this.scan<F>(p)));
-                for (const v of this.existingOnly<Scanned<F>>(scannedFiles)) {
-                    yield v;
-                }
-                for (const dir of partitions.left) {
-                    yield* this.list<F>(dir);
-                }
+    async *list<F extends LocalFile>(@parsedLocalFile fileOrFolder: F): AsyncIterable<Scanned<F>> {
+        const pathStats = this.toFilesAndFolders([fileOrFolder]);
+        const files = pathStats.right.map(s => s.file);
+        const scannedFiles = await Promise.all(files.map(p => this.scan<F>(p)));
+        const existingFiles = this.existingOnly(scannedFiles);
+        for(const file of existingFiles) {
+            yield file;
+        }
+        for(const dirStats of pathStats.left) {
+            const subFiles = this.readDir(dirStats.file);
+            for(const f of subFiles) {
+                yield* this.list(f);
             }
         }
+    }
+
+    protected readDir<F extends LocalFile>(dir: F): F[] {
+        return readdirSync(dir.key)
+            .map(p => join(dir.key, p))
+            .map(key => ({key}) as F);
     }
 
     @parsed

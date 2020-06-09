@@ -43,28 +43,6 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         }, options.concurrency);
     }
 
-    protected async copyFiles<A extends T = T, B extends T = T>(request: CopyRequest<A, B>,
-                                              sourceFiles: Scanned<A>[],
-                                              options: CopyOptions<A, B> & W): Promise<void> {
-        const copyOperations = sourceFiles.map(source => ({
-            destination: this.toDestination({
-                source,
-                destinationFolder: request.destination,
-                sourceFolder: request.source.key
-            }),
-            source
-        }));
-
-        await Promise.all(copyOperations.map(async operation => {
-            if (await this.proceedWithCopy(operation, options)) {
-                await this.copyFile<A, B>(operation, options);
-                if (options.listener) {
-                    options.listener(operation);
-                }
-            }
-        }));
-    }
-
     sameLocation(f1: T, f2: T): boolean {
         return this.toLocationString(f1) === this.toLocationString(f2);
     }
