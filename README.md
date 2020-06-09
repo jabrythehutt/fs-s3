@@ -37,7 +37,7 @@ async function deleteOldFiles() {
 ### Node
 ```typescript
 
-import {NodeFileService, LocalFileService} from "@jabrythehutt/fs-s3/node";
+import {NodeFileService, LocalFileService} from "@jabrythehutt/fs-s3/lib/node";
 import {S3FileService} from "@jabrythehutt/fs-s3";
 import S3 from "aws-sdk/clients/s3";
 
