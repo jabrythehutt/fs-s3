@@ -1,5 +1,5 @@
-import {GenericFileService} from "../../lib/file-service";
 import {LocalFile} from "../api";
+import {GenericFileService} from "./generic-file-service";
 
 export class FileParser {
 
