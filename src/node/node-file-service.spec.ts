@@ -13,6 +13,7 @@ describe("Node file service", function() {
     let s3: S3;
     let s3rver: LocalS3Server;
     let tester: FileServiceTester<AnyFile, AnyFile>;
+    const fileGenerator = new FileGenerator();
 
     before(async () => {
         s3rver = new LocalS3Server();
@@ -54,30 +55,22 @@ describe("Node file service", function() {
             });
 
             describe("Cross-copy tests", () => {
-                let fileGenerator: FileGenerator;
-                beforeEach(() => {
-                    fileGenerator = new FileGenerator();
-                });
 
                 async function writeSomeFilesTo<T extends LocalFile>(folder: T): Promise<void> {
                     const writeRequests = fileGenerator.generateTestFiles(10, folder);
                     await Promise.all(writeRequests.map(r => instance.write(r)));
                 }
 
-                it("Copies files from a local to an S3 folder", async () => {
-                    await writeSomeFilesTo(localFolder);
-                    await tester.testCopyList({
-                        source: localFolder,
-                        destination: s3Folder
-                    });
-                });
-
-                it("Copies files from an S3 folder to a local folder", async () => {
-                    await writeSomeFilesTo(s3Folder);
-                    await tester.testCopyList({
-                        source: s3Folder,
-                        destination: localFolder
-                    });
+                it("Copies files between the local file system and S3", async () => {
+                    for(const folders of fileGenerator.permutations([s3Folder, localFolder])) {
+                        const [source, destination] = folders;
+                        await writeSomeFilesTo(source);
+                        await tester.testCopyList({
+                            source,
+                            destination
+                        });
+                        await Promise.all(folders.map(f => tester.fileService.delete(f)));
+                    }
                 });
             });
         });
