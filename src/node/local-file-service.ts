@@ -70,7 +70,7 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
     }
 
     @parsed
-    async scan(@parsedLocalFile file: LocalFile): Promise<Optional<Scanned<LocalFile>>> {
+    async scan<F extends LocalFile>(@parsedLocalFile file: F): Promise<Optional<Scanned<F>>> {
         if (existsSync(file.key)) {
             const fileInfo = statSync(file.key);
             if (fileInfo.isFile()) {
@@ -113,26 +113,27 @@ export class LocalFileService extends AbstractFileService<LocalFile, {}> {
     }
 
     @parsed
-    async *list(@parsedLocalFile file: LocalFile): AsyncIterable<Scanned<LocalFile>[]> {
+    async *list<F extends LocalFile>(@parsedLocalFile file: F): AsyncIterable<Scanned<F>> {
         if (existsSync(file.key)) {
             const fileStats = statSync(file.key);
             if (fileStats.isFile()) {
-                const scannedFiles = [await this.scan(file)];
-                yield this.existingOnly(scannedFiles);
-
+                const scanned = await this.scan(file);
+                if (scanned.exists) {
+                    yield scanned.value;
+                }
             } if (fileStats.isDirectory()) {
                 const filePaths = readdirSync(file.key)
-                    .map(p => join(file.key, p)).map(key => ({key}));
-                const partitions = partition((p: LocalFile) => statSync(p.key).isFile())(filePaths);
-                const scannedFiles = await Promise.all(partitions.right.map(p => this.scan(p)));
-                yield this.existingOnly(scannedFiles);
+                    .map(p => join(file.key, p)).map(key => ({key} as F));
+                const partitions = partition((p: F) => statSync(p.key).isFile())(filePaths);
+                const scannedFiles = await Promise.all(partitions.right.map(p => this.scan<F>(p)));
+                for (const v of this.existingOnly<Scanned<F>>(scannedFiles)) {
+                    yield v;
+                }
                 for (const dir of partitions.left) {
-                    yield* this.list(dir);
+                    yield* this.list<F>(dir);
                 }
             }
         }
-
-        yield [];
     }
 
     @parsed
