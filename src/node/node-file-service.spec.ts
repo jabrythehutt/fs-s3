@@ -1,10 +1,9 @@
 import {NodeFileService} from "./node-file-service";
-import {DirUtils, FileServiceTester, generateTests, LocalS3Server} from "../../test";
+import {DirUtils, FileGenerator, FileServiceTester, generateTests, LocalS3Server} from "../../test";
 import * as S3 from "aws-sdk/clients/s3";
 import {LocalFileService} from "./local-file-service";
 import {S3FileService} from "../s3";
 import {AnyFile, LocalFile, S3File} from "../api";
-import {FileGenerator} from "../../test/file-generator";
 
 describe("Node file service", function() {
 
@@ -60,9 +59,13 @@ describe("Node file service", function() {
                     fileGenerator = new FileGenerator();
                 });
 
-                it("Copies files from a local to an S3 folder", async () => {
-                    const writeRequests = fileGenerator.generateTestFiles(10, localFolder);
+                async function writeSomeFilesTo<T extends LocalFile>(folder: T): Promise<void> {
+                    const writeRequests = fileGenerator.generateTestFiles(10, folder);
                     await Promise.all(writeRequests.map(r => instance.write(r)));
+                }
+
+                it("Copies files from a local to an S3 folder", async () => {
+                    await writeSomeFilesTo(localFolder);
                     await tester.testCopyList({
                         source: localFolder,
                         destination: s3Folder
@@ -70,8 +73,7 @@ describe("Node file service", function() {
                 });
 
                 it("Copies files from an S3 folder to a local folder", async () => {
-                    const writeRequests = fileGenerator.generateTestFiles(10, s3Folder);
-                    await Promise.all(writeRequests.map(r => instance.write(r)));
+                    await writeSomeFilesTo(s3Folder);
                     await tester.testCopyList({
                         source: s3Folder,
                         destination: localFolder
