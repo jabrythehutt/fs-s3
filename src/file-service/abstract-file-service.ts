@@ -8,8 +8,10 @@ import {
     defaultWriteOptions,
     DeleteOptions,
     FileContent,
+    InputRequest,
     LocalFile,
     Optional,
+    OutputRequest,
     OverwriteOptions,
     Scanned,
     WriteRequest
@@ -19,12 +21,13 @@ import {FpOptional} from "./fp-optional";
 
 export abstract class AbstractFileService<T extends LocalFile, W = unknown> implements GenericFileService<T, W> {
 
-    async copy<A extends T = T, B extends T = T>(request: CopyRequest<A, B>, options?: CopyOptions<A, B> & W):
+    async copy<A extends T = T, B extends T = T>(inputRequest: CopyRequest<A, B>, options?: CopyOptions<A, B> & W):
         Promise<void> {
         options = {
             ...defaultCopyOptions,
             ...options
         };
+        const request = this.parseIORequest(inputRequest);
         await this.processList(this.list(request.source), async source => {
             const operation = {
                 destination: this.toDestination({
@@ -43,11 +46,11 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         }, options.concurrency);
     }
 
-    sameLocation(f1: T, f2: T): boolean {
+    protected sameLocation(f1: T, f2: T): boolean {
         return this.toLocationString(f1) === this.toLocationString(f2);
     }
 
-    sameContent(f1: Scanned<T>, f2: Scanned<T>): boolean {
+    protected sameContent(f1: Scanned<T>, f2: Scanned<T>): boolean {
         return f1.md5 === f2.md5;
     }
 
@@ -65,8 +68,8 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         return !(this.sameContent(sourceFile, destination) && options.skipSame);
     }
 
-    async proceedWithCopy<A extends T = T, B extends T = T>(operation: CopyOperation<A, B>,
-                                                            options: CopyOptions<A, B> & W): Promise<boolean> {
+    protected async proceedWithCopy<A extends T = T, B extends T = T>(
+        operation: CopyOperation<A, B>, options: CopyOptions<A, B> & W): Promise<boolean> {
 
         // TODO: Use a fp-ts pipe to clean up the conditional copy logic
         if (this.sameLocation(operation.source, operation.destination)) {
@@ -110,11 +113,12 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
 
     }
 
-    async delete(fileOrFolder: T, options?: DeleteOptions<T>): Promise<void> {
+    async delete(inputFileOrFolder: T, options?: DeleteOptions<T>): Promise<void> {
         options = {
             ...defaultConcurrencyOptions,
             ...options
         };
+        const fileOrFolder = this.parse(inputFileOrFolder);
         await this.processList(this.list(fileOrFolder), async f => {
             await this.deleteFile(f, options);
             if (options.listener) {
@@ -123,7 +127,8 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         }, options.concurrency);
     }
 
-    async waitForFile<F extends T = T>(file: F): Promise<Scanned<F>> {
+    async waitForFile<F extends T = T>(inputFile: F): Promise<Scanned<F>> {
+        const file = this.parse(inputFile);
         await this.waitForFileToExist(file);
         const result = await this.scan(file);
         return result.value;
@@ -135,12 +140,13 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         return this.scan(request.destination);
     }
 
-    async write<F extends T = T>(request: WriteRequest<F>, options?: OverwriteOptions & W):
+    async write<F extends T = T>(inputRequest: WriteRequest<F>, options?: OverwriteOptions & W):
         Promise<Optional<Scanned<F>>> {
         options = {
             ...defaultWriteOptions,
             ...options,
         }
+        const request = this.parseOutputRequest(inputRequest);
         if (options.overwrite) {
             return this.writeAndScanFile(request, options);
         } else {
@@ -154,7 +160,8 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         }
     }
 
-    async read(file: T): Promise<Optional<FileContent>> {
+    async read(inputFile: T): Promise<Optional<FileContent>> {
+        const file = this.parse(inputFile);
         const scannedFile = await this.scan(file);
         // TODO: Use a cleaner function way to deal with wrapped optional values
         if (scannedFile.exists) {
@@ -180,5 +187,25 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
     abstract writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void>;
 
     abstract list<F extends T = T>(fileOrFolder: F): AsyncIterable<Scanned<F>>;
+
+    abstract parse<F extends T = T>(fileOrFolder: F): F;
+
+    protected parseInputRequest<F extends T, R extends InputRequest<F>>(request: R): R {
+        return {
+            ...request,
+            source: this.parse<F>(request.source)
+        };
+    }
+
+    protected parseOutputRequest<F extends T, R extends OutputRequest<F>>(request: R): R {
+        return {
+            ...request,
+            destination: this.parse<F>(request.destination)
+        };
+    }
+
+    protected parseIORequest<F extends T, R extends InputRequest<F> & OutputRequest<F>>(request: R): R {
+        return this.parseInputRequest(this.parseOutputRequest(request));
+    }
 
 }

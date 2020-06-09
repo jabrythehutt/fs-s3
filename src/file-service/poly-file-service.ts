@@ -5,7 +5,8 @@ import {
     DeleteOptions,
     FileContent,
     LocalFile,
-    Optional, OverwriteOptions,
+    Optional,
+    OverwriteOptions,
     Scanned,
     WriteRequest
 } from "../api";
@@ -57,5 +58,9 @@ export class PolyFileService<A extends LocalFile, B extends LocalFile, W>
 
     writeFile(request: WriteRequest<A | B>, options: OverwriteOptions & W): Promise<void> {
         return this.delegateResolver(request.destination).writeFile(request, options);
+    }
+
+    parse<F extends A | B>(fileOrFolder: F): F {
+        return this.delegateResolver(fileOrFolder).parse(fileOrFolder);
     }
 }

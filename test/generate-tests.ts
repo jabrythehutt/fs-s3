@@ -10,12 +10,14 @@ import {Suite} from "mocha";
 export const generateTests = <F extends LocalFile, W>(name: string,
                                                       folderFactory: () => F,
                                                       testerFactory: () => FileServiceTester<F, W>): Suite => {
-    const fileGenerator = new FileGenerator();
+
     return describe(name, () => {
+        let fileGenerator: FileGenerator<F>;
         let tester: FileServiceTester<F, W>;
         let folder: F;
         beforeEach(() => {
             tester = testerFactory();
+            fileGenerator = new FileGenerator(tester.fileService);
             folder = folderFactory();
         })
 

@@ -13,7 +13,7 @@ describe("Node file service", function() {
     let s3: S3;
     let s3rver: LocalS3Server;
     let tester: FileServiceTester<AnyFile, AnyFile>;
-    const fileGenerator = new FileGenerator();
+    let fileGenerator: FileGenerator<LocalFile>;
 
     before(async () => {
         s3rver = new LocalS3Server();
@@ -26,6 +26,7 @@ describe("Node file service", function() {
         const localFileService = new LocalFileService();
         const s3FileService = new S3FileService(s3);
         instance = new NodeFileService(localFileService, s3FileService);
+        fileGenerator = new FileGenerator(instance);
         tester = new FileServiceTester<AnyFile, AnyFile>(instance);
     });
 
