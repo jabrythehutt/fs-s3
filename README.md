@@ -5,7 +5,7 @@
 # FS-S3
 This project provides an abstraction layer that covers some common read and write operations relating to the Node file system and AWS S3. 
 
-It's currently a work in progress.
+It's currently a work in progress, you can use the [old version](https://github.com/jabrythehutt/fs-s3/tree/v0.3.14) until this is published.
 
 ## Why
 I found myself re-implementing the following procedures in various projects:
