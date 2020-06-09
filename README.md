@@ -1,6 +1,3 @@
-[![CircleCI](https://circleci.com/gh/jabrythehutt/fs-s3.svg?style=svg)](https://circleci.com/gh/jabrythehutt/fs-s3)
-<a href="https://codeclimate.com/github/jabrythehutt/fs-s3/test_coverage"><img src="https://api.codeclimate.com/v1/badges/4b67a943ce875e772b75/test_coverage" /></a>
-
 # FS-S3
 This project provides an abstraction layer that covers some common read and write operations relating to the Node file system and AWS S3. 
 
