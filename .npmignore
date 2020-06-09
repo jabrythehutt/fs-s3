@@ -82,9 +82,10 @@ fabric.properties
 
 typings/**
 
-test/**
-
-
+test
+dist
+src
+.circleci
 .idea/**
 
 *.ts
