@@ -171,24 +171,6 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         return FpOptional.empty();
     }
 
-    abstract copyFile<A extends T = T, B extends T = T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
-        Promise<void>;
-
-    abstract toLocationString(f: T): string;
-
-    abstract scan<F extends T = T>(f: F): Promise<Optional<Scanned<F>>>;
-
-    abstract readFile(file: Scanned<T>): Promise<FileContent>;
-
-    abstract waitForFileToExist(f: T): Promise<void>;
-
-    abstract deleteFile(file: Scanned<T>, options: DeleteOptions<T>): Promise<void>;
-
-    abstract writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void>;
-
-    abstract list<F extends T = T>(fileOrFolder: F): AsyncIterable<Scanned<F>>;
-
-    abstract parse<F extends T = T>(fileOrFolder: F): F;
 
     protected parseInputRequest<F extends T, R extends InputRequest<F>>(request: R): R {
         return {
@@ -207,5 +189,24 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
     protected parseIORequest<F extends T, R extends InputRequest<F> & OutputRequest<F>>(request: R): R {
         return this.parseInputRequest(this.parseOutputRequest(request));
     }
+
+    abstract copyFile<A extends T = T, B extends T = T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
+        Promise<void>;
+
+    abstract toLocationString(f: T): string;
+
+    abstract scan<F extends T = T>(f: F): Promise<Optional<Scanned<F>>>;
+
+    abstract readFile(file: Scanned<T>): Promise<FileContent>;
+
+    abstract waitForFileToExist(f: T): Promise<void>;
+
+    abstract deleteFile(file: Scanned<T>, options: DeleteOptions<T>): Promise<void>;
+
+    abstract writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void>;
+
+    abstract list<F extends T = T>(fileOrFolder: F): AsyncIterable<Scanned<F>>;
+
+    abstract parse<F extends T = T>(fileOrFolder: F): F;
 
 }

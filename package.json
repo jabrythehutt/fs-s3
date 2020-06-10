@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "files": [
     "README.md",
-    "lib"
+    "lib",
+    "src"
   ],
   "directories": {
     "lib": "lib"
@@ -14,12 +15,13 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "compile": "tsc",
+    "compile:check": "tsc --noEmit",
     "clean": "del-cli 'lib', 'dist'",
     "test": "nyc mocha mocha \"src/**/*.spec.ts\"",
     "postpublish": "git push origin --all; git push origin --tags",
     "postversion": "npm publish --access=public",
-    "preversion": "npm test",
-    "deploy": "npm run clean && npm run compile && npm version patch -m \"Bumped version to %s [ci skip]\""
+    "preversion": "npm test && npm run clean && npm run compile",
+    "deploy": "npm version patch -m \"Bumped version to %s [skip CI]\""
   },
   "repository": {
     "type": "git",
