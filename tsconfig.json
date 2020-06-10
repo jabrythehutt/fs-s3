@@ -4,14 +4,13 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "target": "es5",
-    "sourceMap": true,
-    "removeComments": false,
     "declaration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "downlevelIteration": true,
+    "forceConsistentCasingInFileNames": true,
     "lib": [
-      "es2018",
+      "es2019",
       "dom"
     ],
     "outDir": "lib"
