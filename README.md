@@ -1,3 +1,5 @@
+![](https://github.com/actions/hello-world/workflows/.github/workflows/default.yml/badge.svg)
+
 # FS-S3
 This project provides an abstraction layer that covers some common read and write operations relating to the Node file system and AWS S3. 
 
