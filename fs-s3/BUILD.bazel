@@ -1,0 +1,48 @@
+package(default_visibility = ["//visibility:public"])
+load("//:library.bzl", "library")
+load("@npm_bazel_typescript//:index.bzl", "ts_library")
+load("@npm_bazel_jasmine//:index.bzl", "jasmine_node_test")
+
+all_sources = ["*.ts"]
+tests = ["*.spec.ts"]
+
+compile_deps = [
+    "@npm//@types/node"
+]
+
+runtime_deps = [
+    "@npm//aws-sdk",
+    "@npm//mime",
+    "//fs-s3-core"
+]
+
+lib_name = "fs-s3"
+library(
+    name = lib_name,
+    srcs = glob(all_sources, exclude = tests),
+    deps = runtime_deps + compile_deps
+)
+
+test_deps = [
+    "@npm//get-port",
+    "@npm//chai",
+    "@npm//chai-as-promised",
+    "@npm//@types/chai-as-promised",
+    "@npm//@types/chai",
+    "@npm//@types/jasmine",
+    "@npm//jasmine",
+    "@npm//axios",
+    "//fs-s3-test"
+]
+
+ts_library(
+    name = "test_lib",
+    srcs = glob(tests),
+    deps = [lib_name] + test_deps + runtime_deps
+)
+
+jasmine_node_test(
+    coverage = True,
+    name = "test",
+    deps = ["test_lib"]
+)

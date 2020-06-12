@@ -1,0 +1,25 @@
+package(default_visibility = ["//visibility:public"])
+load("//:library.bzl", "library")
+
+lib_name = "fs-s3-test"
+
+runtime_deps = [
+    "@npm//aws-sdk",
+    "@npm//s3rver",
+    "@npm//chai",
+    "@npm//del",
+    "@npm//fp-ts",
+    "@npm//mime",
+    "//fs-s3-core"
+]
+
+compile_deps = [
+    "@npm//@types/jasmine",
+    "@npm//@types/node",
+]
+
+library(
+    name = lib_name,
+    srcs = glob(["*.ts"]),
+    deps = compile_deps + runtime_deps
+)

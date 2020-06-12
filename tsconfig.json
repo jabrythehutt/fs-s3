@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es5",
     "declaration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -13,12 +11,9 @@
       "es2019",
       "dom"
     ],
-    "outDir": "lib"
-  },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "**/*.spec.ts"
-  ]
+    "baseUrl": ".",
+    "paths": {
+      "@jabrythehutt/*": ["dist/bin/*"]
+    }
+  }
 }
