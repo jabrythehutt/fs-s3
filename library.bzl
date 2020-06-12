@@ -5,5 +5,7 @@ def library(name, srcs, deps):
         name = name,
         module_name = "@jabrythehutt/" + name,
         srcs = srcs,
-        deps = deps
+        deps = deps,
+        devmode_module = "commonjs",
+        devmode_target = "es5"
     )

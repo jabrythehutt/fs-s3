@@ -2,6 +2,7 @@ package(default_visibility = ["//visibility:public"])
 load("//:library.bzl", "library")
 load("@npm_bazel_jasmine//:index.bzl", "jasmine_node_test")
 load("@npm_bazel_typescript//:index.bzl", "ts_library")
+load("//:package.bzl", "package")
 
 all_sources = ["*.ts"]
 tests = ["*.spec.ts"]
@@ -47,4 +48,11 @@ jasmine_node_test(
     coverage = True,
     name = "test",
     deps = ["test_lib"]
+)
+
+package(
+    name = "package",
+    lib_name = lib_name,
+    deps = [lib_name],
+    npm_deps = runtime_deps
 )
