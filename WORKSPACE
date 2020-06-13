@@ -1,5 +1,5 @@
 workspace(
-    name = "jabrythehutt",
+    name = "jabrythehutt_fs_s3",
     managed_directories = {"@npm": ["node_modules"]},
 )
 

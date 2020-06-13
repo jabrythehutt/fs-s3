@@ -43,6 +43,5 @@ test(
 )
 
 package(
-    name = "package",
     npm_deps = runtime_deps
 )

@@ -1,7 +1,7 @@
 load("@npm_bazel_typescript//:index.bzl", "ts_library")
 load("module_name.bzl", "module_name")
 
-def library(srcs = [], deps = []):
+def library(srcs, deps = []):
     name = native.package_name()
     ts_library(
         name = name,
