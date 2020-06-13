@@ -2,8 +2,6 @@ package(default_visibility = ["//visibility:public"])
 load("//tools:library.bzl", "library")
 load("//tools:package.bzl", "package")
 load("//tools:test.bzl", "test")
-load("@npm_bazel_jasmine//:index.bzl", "jasmine_node_test")
-load("@npm_bazel_typescript//:index.bzl", "ts_library")
 
 
 all_sources = ["*.ts"]
