@@ -1,8 +1,10 @@
 package(default_visibility = ["//visibility:public"])
-load("//:library.bzl", "library")
+load("//tools:library.bzl", "library")
+load("//tools:package.bzl", "package")
+load("//tools:test.bzl", "test")
 load("@npm_bazel_jasmine//:index.bzl", "jasmine_node_test")
 load("@npm_bazel_typescript//:index.bzl", "ts_library")
-load("//:package.bzl", "package")
+
 
 all_sources = ["*.ts"]
 tests = ["*.spec.ts"]
@@ -19,9 +21,8 @@ runtime_deps = [
     "//fs-s3-core",
     "//fs-s3"
 ]
-lib_name = "fs-s3-node"
+
 library(
-    name = lib_name,
     srcs = glob(all_sources, exclude = tests),
     deps = runtime_deps + compile_deps
 )
@@ -38,21 +39,12 @@ test_deps = [
     "//fs-s3-test"
 ]
 
-ts_library(
-    name = "test_lib",
+test(
     srcs = glob(tests),
-    deps = [lib_name] + test_deps + runtime_deps
-)
-
-jasmine_node_test(
-    coverage = True,
-    name = "test",
-    deps = ["test_lib"]
+    deps = test_deps + runtime_deps
 )
 
 package(
     name = "package",
-    lib_name = lib_name,
-    deps = [lib_name],
     npm_deps = runtime_deps
 )

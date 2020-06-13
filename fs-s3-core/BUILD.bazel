@@ -1,8 +1,6 @@
 package(default_visibility = ["//visibility:public"])
-load("//:library.bzl", "library")
-load("//:package.bzl", "package")
-
-lib_name = "fs-s3-core"
+load("//tools:library.bzl", "library")
+load("//tools:package.bzl", "package")
 
 runtime_deps = [
     "@npm//fp-ts"
@@ -13,14 +11,10 @@ compile_deps = [
 ]
 
 library(
-    name = lib_name,
     srcs = glob(["*.ts"]),
     deps = compile_deps + runtime_deps
 )
 
 package(
-    name = "package",
-    lib_name = lib_name,
-    deps = [lib_name],
     npm_deps = runtime_deps
 )
