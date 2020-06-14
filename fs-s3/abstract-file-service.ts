@@ -171,19 +171,19 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         return FpOptional.empty();
     }
 
-
-    protected parseInputRequest<F extends T, R extends InputRequest<F>>(request: R): R {
+    protected parseField<A, T extends keyof A>(input: A, field: T, parser: (input: A[T]) => A[T]): A {
         return {
-            ...request,
-            source: this.parse<F>(request.source)
+            ...input,
+            [field]: parser(input[field])
         };
     }
 
+    protected parseInputRequest<F extends T, R extends InputRequest<F>>(request: R): R {
+        return this.parseField(request, "source", f => this.parse(f));
+    }
+
     protected parseOutputRequest<F extends T, R extends OutputRequest<F>>(request: R): R {
-        return {
-            ...request,
-            destination: this.parse<F>(request.destination)
-        };
+        return this.parseField(request, "destination", f => this.parse(f));
     }
 
     protected parseIORequest<F extends T, R extends InputRequest<F> & OutputRequest<F>>(request: R): R {
