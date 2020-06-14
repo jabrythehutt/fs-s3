@@ -16,5 +16,4 @@ library(
 )
 
 package(
-    npm_deps = runtime_deps
 )

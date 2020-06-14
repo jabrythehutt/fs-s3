@@ -21,7 +21,6 @@ def package(name = "package", srcs = [], package_layers = []):
         srcs = srcs,
         version = version,
         module_name = module_name(),
-        npm_deps = [],
         package_layers = ["//:common.package.json", "local_deps"] + package_layers,
-        deps = [lib_name] + deps,
+        deps = [lib_name],
     )

@@ -22,6 +22,4 @@ library(
     deps = compile_deps + runtime_deps
 )
 
-package(
-    npm_deps = runtime_deps
-)
+package()
