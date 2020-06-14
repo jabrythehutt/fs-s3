@@ -8,7 +8,7 @@ def to_layer_paths(layers):
         paths.append("$(locations {layer})".format(layer = layer))
     return paths
 
-def package_json(name = "package.json", root_package = "//:package.json", data = [], layers = [], version = "0.0.0-PLACEHOLDER"):
+def package_json(name = "package", root_package = "//:package.json", data = [], layers = [], version = "0.0.0-PLACEHOLDER"):
 
     local_deps_name = name + "_local_deps"
     local_deps(
