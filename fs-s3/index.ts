@@ -9,3 +9,4 @@ export * from "./default-write-options";
 export * from "./default-copy-options";
 export * from "./default-concurrency-options";
 export * from "./default-content-type";
+export * from "./s3-key-parser";

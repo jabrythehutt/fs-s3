@@ -14,10 +14,10 @@ import {defaultContentType} from "./default-content-type";
 import {S3WriteOptions} from "./s3-write-options";
 import {defaultS3WriteOptions} from "./default-s3-write-options";
 import {defaultLinkExpiryPeriod} from "./default-link-expiry-period";
-import {sep} from "path";
 import {S3File} from "./s3-file";
 import {AbstractFileService} from "./abstract-file-service";
 import {ScannedS3File} from "./scanned-s3-file";
+import {S3KeyParser} from "@jabrythehutt/fs-s3/s3-key-parser";
 
 export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
@@ -185,20 +185,8 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     parse<F extends S3File>(fileOrFolder: F): F {
         return {
             ...fileOrFolder,
-            key: this.toS3Key(fileOrFolder.key)
+            key: S3KeyParser.parse(fileOrFolder.key)
         };
-    }
-
-    replacePathSepsWithForwardSlashes(input: string): string {
-        return input.split(sep).join("/");
-    }
-
-    stripPrefixSlash(input: string): string {
-        return input.startsWith("/") ? input.replace("/", "") : input;
-    }
-
-    toS3Key(input: string): string {
-        return this.stripPrefixSlash(this.replacePathSepsWithForwardSlashes(input));
     }
 
 }
