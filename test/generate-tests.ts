@@ -1,15 +1,22 @@
-import {CopyOperation, CopyOptions, DeleteOptions, LocalFile, Scanned, WriteOptions, WriteRequest} from "../src/api";
+import {
+    CopyOperation,
+    CopyOptions,
+    DeleteOptions,
+    FpOptional,
+    LocalFile,
+    Scanned,
+    WriteOptions,
+    WriteRequest
+} from "@jabrythehutt/fs-s3-core";
 import {FileServiceTester} from "./file-service-tester";
 import {FileGenerator} from "./file-generator";
-import {FpOptional} from "../src/file-service";
 import {expect} from "chai";
 import {join} from "path";
-import {Suite} from "mocha";
+
 
 export const generateTests = <F extends LocalFile, W>(name: string,
                                                       folderFactory: () => F,
-                                                      testerFactory: () => FileServiceTester<F, W>): Suite => {
-
+                                                      testerFactory: () => FileServiceTester<F, W>): void => {
     return describe(name, () => {
         let fileGenerator: FileGenerator<F>;
         let tester: FileServiceTester<F, W>;

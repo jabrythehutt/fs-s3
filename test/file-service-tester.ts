@@ -1,15 +1,16 @@
-import {FpOptional, GenericFileService} from "../src/file-service";
 import {
     CopyOptions,
     CopyRequest,
     DeleteOptions,
     FileContent,
+    FpOptional,
+    GenericFileService,
     LocalFile,
     Optional,
     Scanned,
     WriteOptions,
     WriteRequest
-} from "../src/api";
+} from "@jabrythehutt/fs-s3-core";
 import {expect} from "chai";
 import {basename} from "path";
 import {FileInfo} from "./file.info";

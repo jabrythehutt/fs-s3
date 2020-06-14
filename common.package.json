@@ -1,0 +1,8 @@
+{
+  "author": "Daniel Jabry <djabry@gmail.com>",
+  "license": "ISC",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "sideEffects": false,
+  "repository": "github:jabrythehutt/fs-s3"
+}

@@ -1,6 +1,5 @@
-import {LocalFile, WriteRequest} from "../src/api";
+import {GenericFileService, LocalFile, WriteRequest} from "@jabrythehutt/fs-s3-core";
 import {join} from "path";
-import {GenericFileService} from "../src/file-service";
 
 export class FileGenerator<T extends LocalFile> {
 

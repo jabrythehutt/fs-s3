@@ -1,0 +1,17 @@
+package(default_visibility = ["//visibility:public"])
+load("//tools:index.bzl", "library", "package")
+
+runtime_deps = [
+    "@npm//fp-ts"
+]
+
+compile_deps = [
+    "@npm//@types/node"
+]
+
+library(
+    srcs = glob(["*.ts"]),
+    deps = compile_deps + runtime_deps
+)
+
+package()

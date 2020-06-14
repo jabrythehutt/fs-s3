@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:public"])
+load("//tools:index.bzl", "library")
+
+runtime_deps = [
+    "@npm//aws-sdk",
+    "@npm//s3rver",
+    "@npm//chai",
+    "@npm//del",
+    "@npm//fp-ts",
+    "@npm//mime",
+    "//fs-s3-core"
+]
+
+compile_deps = [
+    "@npm//@types/jasmine",
+    "@npm//@types/node",
+]
+
+library(
+    srcs = glob(["*.ts"]),
+    deps = compile_deps + runtime_deps
+)
