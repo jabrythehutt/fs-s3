@@ -13,7 +13,7 @@ def _impl(ctx):
     ctx.actions.write(output, package_json.to_json(), is_executable=False)
 
 
-local_package = rule(
+local_deps = rule(
     implementation = _impl,
     attrs = {
         "version": attr.string(

@@ -1,19 +1,22 @@
 load("@bazel_migration_utils//:index.bzl", "enhanced_npm_package")
 load("module_name.bzl", "module_name")
-load("local_package.bzl", "local_package")
+load("//package-builder:local_deps.bzl", "local_deps")
+load("//package-builder:registry_deps.bzl", "registry_deps")
 
 def package(name = "package", srcs = [], package_layers = []):
     lib_name = native.package_name()
-    local_deps = name + "_local_deps.txt"
-    bazel_lib_name = "//" + lib_name + ":" + lib_name
-
     version = "0.0.0-PLACEHOLDER"
-
-    local_package(
+    local_deps(
         name = "local_deps",
         data = [lib_name],
         version = version
     )
+
+    registry_deps(
+        name = "registry_deps",
+        data = [lib_name]
+    )
+
 
     enhanced_npm_package(
         name = name,
