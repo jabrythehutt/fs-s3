@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/jabrythehutt/fs-s3#readme",
   "devDependencies": {
+    "@bazel/bazelisk": "^1.5.0",
     "@bazel/jasmine": "^1.7.0",
     "@bazel/karma": "^1.7.0",
     "@bazel/rollup": "^1.7.0",

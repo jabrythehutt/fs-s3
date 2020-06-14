@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -u -e -o pipefail
+set -e
 
 # Call the script with argument "pack" or "publish"
 readonly NPM_COMMAND=${1:-publish}
