@@ -1,6 +1,5 @@
 package(default_visibility = ["//visibility:public"])
-load("//tools:library.bzl", "library")
-load("//tools:package.bzl", "package")
+load("//tools:index.bzl", "library")
 
 runtime_deps = [
     "@npm//aws-sdk",
@@ -21,5 +20,3 @@ library(
     srcs = glob(["*.ts"]),
     deps = compile_deps + runtime_deps
 )
-
-package()

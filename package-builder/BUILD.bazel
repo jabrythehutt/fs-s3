@@ -1,5 +1,4 @@
 package(default_visibility = ["//visibility:public"])
-
 load("simple_cli.bzl", "simple_cli")
 
 deps = [

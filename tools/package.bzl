@@ -1,5 +1,5 @@
 load("module_name.bzl", "module_name")
-load("//package-builder:package_json.bzl", "package_json")
+load("//package-builder:index.bzl", "package_json")
 load("@build_bazel_rules_nodejs//:index.bzl", "pkg_npm")
 
 def package(name = "npm_package", srcs = [], package_layers = []):

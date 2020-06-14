@@ -1,7 +1,5 @@
 package(default_visibility = ["//visibility:public"])
-load("//tools:library.bzl", "library")
-load("//tools:test.bzl", "test")
-load("//tools:package.bzl", "package")
+load("//tools:index.bzl", "library", "package", "test")
 
 all_sources = ["*.ts"]
 tests = ["*.spec.ts"]
@@ -38,5 +36,4 @@ test(
     deps = test_deps + runtime_deps
 )
 
-package(
-)
+package()
