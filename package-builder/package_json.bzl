@@ -8,7 +8,7 @@ def to_layer_paths(layers):
         paths.append("$(locations {layer})".format(layer = layer))
     return paths
 
-def package_json(name = "package", root_package = "//:package.json", data = [], layers = [], version = "0.0.0-PLACEHOLDER"):
+def package_json(name, output_path = "package.json", root_package = "//:package.json", data = [], layers = [], version = "0.0.0-PLACEHOLDER"):
 
     local_deps_name = name + "_local_deps"
     local_deps(
@@ -31,7 +31,7 @@ def package_json(name = "package", root_package = "//:package.json", data = [], 
             registry_deps_name
         ] + layers,
         outs = [
-            name + ".json"
+            output_path
         ],
         tool = "//package-builder:merge_json",
         args = [
