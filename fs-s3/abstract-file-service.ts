@@ -178,16 +178,14 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
         };
     }
 
-    protected parseInputRequest<F extends T, R extends InputRequest<F>>(request: R): R {
-        return this.parseField(request, "source", f => this.parse(f));
-    }
-
     protected parseOutputRequest<F extends T, R extends OutputRequest<F>>(request: R): R {
         return this.parseField(request, "destination", f => this.parse(f));
     }
 
     protected parseIORequest<F extends T, R extends InputRequest<F> & OutputRequest<F>>(request: R): R {
-        return this.parseInputRequest(this.parseOutputRequest(request));
+        const fileParser = (f: F) => this.parse(f);
+        const parsedInput = this.parseField(request, "source", fileParser);
+        return this.parseOutputRequest(parsedInput);
     }
 
     abstract copyFile<A extends T = T, B extends T = T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
