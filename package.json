@@ -6,10 +6,7 @@
     "build": "bazelisk build //...",
     "lint": "eslint . --ext .ts",
     "test": "bazelisk test //...",
-    "postpublish": "git push origin --all; git push origin --tags",
-    "postversion": "npm publish --access=public",
-    "preversion": "npm test && npm run clean && npm run compile",
-    "deploy": "npm version patch -m \"Bumped version to %s [skip CI]\""
+    "deploy": "npm version patch patch from-git"
   },
   "repository": {
     "type": "git",
