@@ -26,4 +26,4 @@ jobs:
       - run: yarn --frozen-lockfile
       - name: Apply NPM registry credentials
         run: npm config set '//registry.npmjs.org/:_authToken' "${{secrets.NPM_TOKEN}}"
-      - run: sh publish.sh
+      - run: ./publish.sh

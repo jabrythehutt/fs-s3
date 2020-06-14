@@ -38,7 +38,6 @@ jobs:
 
     - run: yarn lint
     - run: yarn test
-    - run: ./publish.sh
 
 # Can't get code coverage yet: https://github.com/bazelbuild/rules_nodejs/issues/638
 
