@@ -1,0 +1,35 @@
+package(default_visibility = ["//visibility:public"])
+load("@npm_bazel_typescript//:index.bzl", "ts_library")
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
+
+runtime_deps = [
+    "@npm//yargs"
+]
+
+compile_deps = [
+    "@npm//@types/node",
+]
+
+ts_library(
+    name = "lib",
+    srcs = glob(["*.ts"]),
+    devmode_target = "es5",
+    devmode_module = "commonjs",
+    deps = compile_deps + runtime_deps
+)
+
+filegroup(
+    name = "compiled_lib",
+    srcs = [
+        "lib"
+    ],
+    output_group = "es5_sources"
+)
+
+nodejs_binary(
+    name = "cli",
+    entry_point = "compiled_lib",
+    data = [
+        "compiled_lib"
+    ] + runtime_deps
+)

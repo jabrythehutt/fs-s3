@@ -52,13 +52,15 @@
     "get-port": "^5.1.1",
     "jasmine": "^3.5.0",
     "jsonpath": "^1.0.2",
+    "lodash": "^4.17.15",
     "mkdirp": "^1.0.4",
     "nyc": "^15.1.0",
     "s3rver": "^3.5.0",
     "source-map-support": "^0.5.19",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.3",
-    "validator": "^13.0.0"
+    "validator": "^13.0.0",
+    "yargs": "^15.3.1"
   },
   "dependencies": {
     "fp-ts": "^2.6.2",

@@ -14,9 +14,9 @@ def package(name = "package", srcs = [], package_layers = []):
 
     registry_deps(
         name = "registry_deps",
-        data = [lib_name]
+        data = [lib_name],
+        root_package = "//:package.json"
     )
-
 
     enhanced_npm_package(
         name = name,
