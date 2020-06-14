@@ -6,7 +6,7 @@
     "build": "bazelisk build //...",
     "lint": "eslint . --ext .ts",
     "test": "bazelisk test //...",
-    "deploy": "npm version patch patch from-git"
+    "deploy": "npm version patch from-git"
   },
   "repository": {
     "type": "git",
