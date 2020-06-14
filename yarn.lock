@@ -177,6 +177,11 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
+"@bazel/bazelisk@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@bazel/bazelisk/-/bazelisk-1.5.0.tgz#61f583ed93be138b47be7180403938ea4057f54b"
+  integrity sha512-qhOGN1WmfZYNJXGrRL/0byii9hX5FBomMv3WWI2OEL2+Bxm4t/bR3zMxN3xwQX1C8meSSrAfKGSzxVOZfpJsOg==
+
 "@bazel/jasmine@^1.7.0":
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/@bazel/jasmine/-/jasmine-1.7.0.tgz#429df76e6628aa139176340434729cc091e371d7"
