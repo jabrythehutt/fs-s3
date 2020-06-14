@@ -1,6 +1,4 @@
 {
-  "name": "$MODULE_NAME",
-  "version": "$VERSION",
   "author": "Daniel Jabry <djabry@gmail.com>",
   "license": "ISC",
   "main": "./index.js",

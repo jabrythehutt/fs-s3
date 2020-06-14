@@ -1,35 +1,22 @@
 package(default_visibility = ["//visibility:public"])
-load("@npm_bazel_typescript//:index.bzl", "ts_library")
-load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
 
-runtime_deps = [
-    "@npm//yargs"
-]
+load("simple_cli.bzl", "simple_cli")
 
-compile_deps = [
+deps = [
+    "@npm//yargs",
+    "@npm//lodash",
     "@npm//@types/node",
+    "@npm//@types/lodash"
 ]
 
-ts_library(
-    name = "lib",
-    srcs = glob(["*.ts"]),
-    devmode_target = "es5",
-    devmode_module = "commonjs",
-    deps = compile_deps + runtime_deps
-)
-
-filegroup(
-    name = "compiled_lib",
-    srcs = [
-        "lib"
-    ],
-    output_group = "es5_sources"
-)
-
-nodejs_binary(
+simple_cli(
     name = "cli",
-    entry_point = "compiled_lib",
-    data = [
-        "compiled_lib"
-    ] + runtime_deps
+    file = "generate-registry-package-json.ts",
+    deps = deps
+)
+
+simple_cli(
+    name = "merge_json",
+    file = "merge-json.ts",
+    deps = deps
 )
