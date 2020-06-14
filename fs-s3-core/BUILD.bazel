@@ -14,6 +14,3 @@ library(
     srcs = glob(["*.ts"]),
     deps = compile_deps + runtime_deps
 )
-
-package(
-)

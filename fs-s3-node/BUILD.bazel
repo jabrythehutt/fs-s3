@@ -3,7 +3,6 @@ load("//tools:library.bzl", "library")
 load("//tools:package.bzl", "package")
 load("//tools:test.bzl", "test")
 
-
 all_sources = ["*.ts"]
 tests = ["*.spec.ts"]
 
@@ -34,7 +33,7 @@ test_deps = [
     "@npm//@types/jasmine",
     "@npm//jasmine",
     "@npm//axios",
-    "//fs-s3-test"
+    "//test"
 ]
 
 test(

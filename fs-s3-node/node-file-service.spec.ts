@@ -1,5 +1,5 @@
 import {NodeFileService} from "./node-file-service";
-import {DirUtils, FileGenerator, FileServiceTester, generateTests, LocalS3Server} from "@jabrythehutt/fs-s3-test";
+import {DirUtils, FileGenerator, FileServiceTester, generateTests, LocalS3Server} from "../test";
 import * as S3 from "aws-sdk/clients/s3";
 import {LocalFileService} from "./local-file-service";
 import {S3File, S3FileService} from "@jabrythehutt/fs-s3";

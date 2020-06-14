@@ -30,7 +30,7 @@ test_deps = [
     "@npm//@types/jasmine",
     "@npm//jasmine",
     "@npm//axios",
-    "//fs-s3-test"
+    "//test"
 ]
 
 test(

@@ -1,5 +1,5 @@
 import {LocalFileService} from "./local-file-service";
-import {DirUtils, FileServiceTester, generateTests} from "@jabrythehutt/fs-s3-test";
+import {DirUtils, FileServiceTester, generateTests} from "../test";
 import {LocalFile} from "@jabrythehutt/fs-s3-core";
 
 describe("Local file service", () => {

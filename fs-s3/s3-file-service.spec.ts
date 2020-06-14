@@ -7,7 +7,7 @@ import {FileContent, FpOptional} from "@jabrythehutt/fs-s3-core";
 import {defaultContentType} from "./default-content-type";
 import {getType} from "mime";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
-import {FileServiceTester, generateTests, LocalS3Server} from "@jabrythehutt/fs-s3-test";
+import {FileServiceTester, generateTests, LocalS3Server} from "../test";
 import {S3WriteOptions} from "./s3-write-options";
 import {S3File} from "./s3-file";
 import getPort from "get-port";
