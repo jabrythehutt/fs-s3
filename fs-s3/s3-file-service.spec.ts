@@ -11,6 +11,7 @@ import {FileServiceTester, generateTests, LocalS3Server} from "../test";
 import {S3WriteOptions} from "./s3-write-options";
 import {S3File} from "./s3-file";
 import getPort from "get-port";
+import { NodeContentScanner } from "@jabrythehutt/fs-s3-node";
 
 const bucketExistError = "The specified bucket does not exist";
 
@@ -47,7 +48,8 @@ describe("S3 file service", () => {
             Bucket: testBucket
         }).promise();
         instance = new S3FileService(s3);
-        tester = new FileServiceTester<S3File, S3WriteOptions>(instance);
+        const scanner = new NodeContentScanner();
+        tester = new FileServiceTester<S3File, S3WriteOptions>(instance, scanner);
     });
 
     generateTests("Standard tests", () => ({bucket: testBucket, key: ""}), () => tester);

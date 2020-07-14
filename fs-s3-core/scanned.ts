@@ -1,14 +1,7 @@
-export type Scanned<T> = T & {
-    /**
-     * The md5 hash of the file content
-     */
-    md5: string;
+import {ContentInfo} from "./content-info";
 
-    /**
-     * The size of the file in bytes
-     */
-    size: number;
-
+export type Scanned<T> = T & ContentInfo & {
+   
     /**
      * The type of content stored in the file
      */

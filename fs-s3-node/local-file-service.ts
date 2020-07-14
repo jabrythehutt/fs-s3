@@ -6,7 +6,8 @@ import {
     LocalFile,
     Optional,
     Scanned,
-    WriteRequest
+    WriteRequest,
+    sleep
 } from "@jabrythehutt/fs-s3-core";
 import {
     copyFileSync,
@@ -81,14 +82,10 @@ export class LocalFileService extends AbstractFileService<LocalFile> {
         return this.parse(f).key;
     }
 
-    protected async sleep(period: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, period));
-    }
-
     async waitForFileToExist(inputFile: LocalFile): Promise<void> {
         const file = this.parse(inputFile);
         while (!existsSync(file.key)) {
-            await this.sleep(this.pollPeriod);
+            await sleep(this.pollPeriod);
         }
     }
 

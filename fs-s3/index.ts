@@ -10,3 +10,7 @@ export * from "./default-copy-options";
 export * from "./default-concurrency-options";
 export * from "./default-content-type";
 export * from "./s3-key-parser";
+export * from "./memory-file-service";
+export * from "./to-s3-location-string";
+export * from "./parse-s3-file";
+export * from "./mock-s3-file-service";

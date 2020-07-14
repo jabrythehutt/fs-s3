@@ -17,7 +17,8 @@ import {defaultLinkExpiryPeriod} from "./default-link-expiry-period";
 import {S3File} from "./s3-file";
 import {AbstractFileService} from "./abstract-file-service";
 import {ScannedS3File} from "./scanned-s3-file";
-import {S3KeyParser} from "@jabrythehutt/fs-s3/s3-key-parser";
+import { toS3LocationString } from "./to-s3-location-string";
+import { parseS3File } from "./parse-s3-file";
 
 export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
@@ -131,7 +132,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     }
 
     toLocationString(input: S3File): string {
-        return `s3://${[input.bucket, input.key].join("/")}`;
+        return toS3LocationString(input);
     }
 
     protected toS3WriteParams(destination: S3File, options: S3WriteOptions): PutObjectRequest {
@@ -183,10 +184,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     }
 
     parse<F extends S3File>(fileOrFolder: F): F {
-        return {
-            ...fileOrFolder,
-            key: S3KeyParser.parse(fileOrFolder.key)
-        };
+        return parseS3File(fileOrFolder);
     }
 
 }

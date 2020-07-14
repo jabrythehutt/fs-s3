@@ -9,12 +9,13 @@ import {
     Optional,
     Scanned,
     WriteOptions,
-    WriteRequest
+    WriteRequest,
+    Scanner,
+    sleep
 } from "@jabrythehutt/fs-s3-core";
 import {expect} from "chai";
 import {basename} from "path";
-import {FileInfo} from "./file.info";
-import {createHash} from "crypto";
+import {FileInfo} from "./file-info";
 import {getType} from "mime";
 import {pipe} from "fp-ts/lib/pipeable";
 import {fold, fromNullable} from "fp-ts/lib/Option";
@@ -22,7 +23,7 @@ import {fileSorter} from "./file-sorter";
 
 export class FileServiceTester<T extends LocalFile, W = unknown> {
 
-    constructor(readonly fileService: GenericFileService<T, W>) {
+    constructor(readonly fileService: GenericFileService<T, W>, readonly scanner: Scanner) {
     }
 
     async testWriteRead(request: WriteRequest<T>, options?: WriteOptions & W): Promise<void> {
@@ -56,33 +57,19 @@ export class FileServiceTester<T extends LocalFile, W = unknown> {
         await this.testReadFile(writtenFile, request.body);
     }
 
-
-    async delay(period: number): Promise<void> {
-        await new Promise(resolve => setTimeout(resolve, period));
-    }
-
-    md5(input: FileContent): string {
-        const hash = createHash("md5");
-        hash.update(input.toString());
-        return hash.digest("hex");
-    }
-
-    size(input: FileContent): number {
-        return Buffer.byteLength(input.toString());
-    }
-
-    toScanned(request: WriteRequest<T>): Scanned<T> {
+    async toScanned(request: WriteRequest<T>): Promise<Scanned<T>> {
+        const contentInfo = await this.scanner.scan(request.body);
         return {
             ...request.destination,
-            size: this.size(request.body),
-            md5: this.md5(request.body),
+            ...contentInfo,
             mimeType: getType(request.destination.key)
         };
     }
 
     async testWriteScan(request: WriteRequest<T>, options?: WriteOptions & W): Promise<void> {
         await this.fileService.write(request, options);
-        const expectedScan = FpOptional.of(this.toScanned(request));
+        const scannedFile = await this.toScanned(request);
+        const expectedScan = FpOptional.of(scannedFile);
         await this.testScan(request.destination, expectedScan);
     }
 
@@ -117,9 +104,9 @@ export class FileServiceTester<T extends LocalFile, W = unknown> {
     }
 
     async testWriteAndWait(request: WriteRequest<T>, options?: WriteOptions & W): Promise<void> {
-        const expectedFile = this.toScanned(request);
+        const expectedFile = await this.toScanned(request);
         const waitForFilePromise = this.testWait(request.destination, expectedFile);
-        await this.delay(100);
+        await sleep(100);
         await this.fileService.write(request, options);
         await waitForFilePromise;
     }

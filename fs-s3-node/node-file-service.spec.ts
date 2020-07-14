@@ -6,6 +6,7 @@ import {S3File, S3FileService} from "@jabrythehutt/fs-s3";
 import {AnyFile} from "./any-file";
 import {LocalFile} from "@jabrythehutt/fs-s3-core";
 import getPort from "get-port";
+import { NodeContentScanner } from "./node-content-scanner";
 
 describe("Node file service", function() {
 
@@ -31,7 +32,8 @@ describe("Node file service", function() {
         const s3FileService = new S3FileService(s3);
         instance = new NodeFileService(localFileService, s3FileService);
         fileGenerator = new FileGenerator(instance);
-        tester = new FileServiceTester<AnyFile, AnyFile>(instance);
+        const contentScanner = new NodeContentScanner();
+        tester = new FileServiceTester<AnyFile, AnyFile>(instance, contentScanner);
     });
 
     describe("S3 tests", () => {
