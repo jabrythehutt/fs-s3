@@ -163,7 +163,7 @@ export abstract class AbstractFileService<T extends LocalFile, W = unknown> impl
     async read(inputFile: T): Promise<Optional<FileContent>> {
         const file = this.parse(inputFile);
         const scannedFile = await this.scan(file);
-        // TODO: Use a cleaner function way to deal with wrapped optional values
+        // TODO: Use a cleaner functional way to deal with wrapped optional values
         if (scannedFile.exists) {
            const result = await this.readFile(scannedFile.value);
            return FpOptional.of(result);

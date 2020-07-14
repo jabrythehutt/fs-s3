@@ -10,3 +10,5 @@ export * from "./default-copy-options";
 export * from "./default-concurrency-options";
 export * from "./default-content-type";
 export * from "./s3-key-parser";
+export * from "./memory-file-service";
+export * from "./sleep";

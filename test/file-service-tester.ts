@@ -13,7 +13,7 @@ import {
 } from "@jabrythehutt/fs-s3-core";
 import {expect} from "chai";
 import {basename} from "path";
-import {FileInfo} from "./file.info";
+import {FileInfo} from "./file-info";
 import {createHash} from "crypto";
 import {getType} from "mime";
 import {pipe} from "fp-ts/lib/pipeable";
