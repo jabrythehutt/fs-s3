@@ -1,5 +1,5 @@
 import {MockS3FileService} from "./mock-s3-file-service";
-import {DirUtils, FileServiceTester, generateTests} from "../test";
+import {FileServiceTester, generateTests} from "../test";
 import {S3File} from "./s3-file";
 import {NodeContentScanner} from "@jabrythehutt/fs-s3-node";
 

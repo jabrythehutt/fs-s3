@@ -6,7 +6,7 @@ import { toS3LocationString } from "./to-s3-location-string";
 
 export class MockS3FileService extends MemoryFileService<S3File> {
     
-  constructor(scanner: Scanner, pollPeriod: number = 100) {
+  constructor(scanner: Scanner, pollPeriod = 100) {
       super(scanner, pollPeriod);
   }
 

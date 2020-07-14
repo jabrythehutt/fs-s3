@@ -1,12 +1,9 @@
 import {
     CopyOperation,
-    CopyOptions,
-    DeleteOptions,
     FileContent,
     FpOptional,
     LocalFile,
     Optional,
-    OverwriteOptions,
     Scanned,
     WriteRequest,
     Scanner,
@@ -23,7 +20,7 @@ export abstract class MemoryFileService<T extends LocalFile, W = unknown> extend
         super();
     }
 
-    async copyFile<A extends T = T, B extends T = T>(request: CopyOperation<A, B>, options: CopyOptions<A, B> & W):
+    async copyFile<A extends T = T, B extends T = T>(request: CopyOperation<A, B>):
         Promise<void> {
             const sourceKey = this.toLocationString(request.source);
             const destinationKey = this.toLocationString(request.destination);
@@ -57,12 +54,12 @@ export abstract class MemoryFileService<T extends LocalFile, W = unknown> extend
         }
     }
 
-    async deleteFile(file: Scanned<T>, options: DeleteOptions<T>): Promise<void> {
+    async deleteFile(file: Scanned<T>): Promise<void> {
         const locationString = this.toLocationString(file);
         delete this.store[locationString];
     }
 
-    async writeFile(request: WriteRequest<T>, options: OverwriteOptions & W): Promise<void> {
+    async writeFile(request: WriteRequest<T>): Promise<void> {
         const locationString = this.toLocationString(request.destination);
         this.store[locationString] = request.body.toString();
     }
