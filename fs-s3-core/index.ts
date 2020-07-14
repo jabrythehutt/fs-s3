@@ -15,4 +15,5 @@ export * from "./output-request";
 export * from "./generic-file-service";
 export * from "./fp-optional";
 export * from "./scanner";
+export * from "./sleep";
 export * from "./content-info";

@@ -1,6 +1,7 @@
 import {LocalFileService} from "./local-file-service";
 import {DirUtils, FileServiceTester, generateTests} from "../test";
 import {LocalFile} from "@jabrythehutt/fs-s3-core";
+import { NodeContentScanner } from "./node-content-scanner";
 
 describe("Local file service", () => {
     let tester: FileServiceTester<LocalFile>;
@@ -13,7 +14,8 @@ describe("Local file service", () => {
         jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000
         tempDir = DirUtils.createTempDir();
         instance = new LocalFileService();
-        tester = new FileServiceTester<LocalFile>(instance);
+        const contentScanner = new NodeContentScanner();
+        tester = new FileServiceTester<LocalFile>(instance, contentScanner);
     });
 
     generateTests("Standard tests", () => ({key: `${tempDir}/`}), () => tester);

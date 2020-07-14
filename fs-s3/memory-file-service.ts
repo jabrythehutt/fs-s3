@@ -9,10 +9,10 @@ import {
     OverwriteOptions,
     Scanned,
     WriteRequest,
-    Scanner
+    Scanner,
+    sleep
 } from "@jabrythehutt/fs-s3-core";
 import {getType} from "mime";
-import {sleep} from "./sleep";
 import {AbstractFileService} from "./abstract-file-service";
 
 export abstract class MemoryFileService<T extends LocalFile, W = unknown> extends AbstractFileService<T, W> {
@@ -87,9 +87,5 @@ export abstract class MemoryFileService<T extends LocalFile, W = unknown> extend
         }
         
     }
-
-    abstract parse<F extends T = T>(fileOrFolder: F): F;
-
-    abstract toLocationString(f: T): string;
 
 }

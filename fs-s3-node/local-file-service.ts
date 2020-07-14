@@ -1,4 +1,4 @@
-import {AbstractFileService, sleep} from "@jabrythehutt/fs-s3";
+import {AbstractFileService} from "@jabrythehutt/fs-s3";
 import {
     CopyOperation,
     FileContent,
@@ -6,7 +6,8 @@ import {
     LocalFile,
     Optional,
     Scanned,
-    WriteRequest
+    WriteRequest,
+    sleep
 } from "@jabrythehutt/fs-s3-core";
 import {
     copyFileSync,

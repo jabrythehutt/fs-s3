@@ -87,7 +87,7 @@ export const generateTests = <F extends LocalFile, W>(name: string,
                 await tester.testWriteDelete(writeRequest, undefined, {
                     listener: o => deletedFile.push(o)
                 } as DeleteOptions<F>);
-                expect(deletedFile).to.deep.equal([tester.toScanned(writeRequest)])
+                expect(deletedFile).to.deep.equal([await tester.toScanned(writeRequest)])
             });
 
             it("Listens to copy operations", async () => {
@@ -102,7 +102,7 @@ export const generateTests = <F extends LocalFile, W>(name: string,
                     destination: destinationRequest.destination
                 }, options as CopyOptions<F, F> & W);
                 const expectedCopyOperation: CopyOperation<F, F> = {
-                    source: tester.toScanned(writeRequest),
+                    source: await tester.toScanned(writeRequest),
                     destination: destinationRequest.destination
                 };
                 expect(copyOperations).to.deep.equal([expectedCopyOperation]);
