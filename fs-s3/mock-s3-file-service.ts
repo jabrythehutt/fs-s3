@@ -1,21 +1,14 @@
-import {MemoryFileService} from "./memory-file-service";
+
 import {S3File} from "./s3-file";
+import {InMemory} from "./in-memory";
 import {Scanner} from "@jabrythehutt/fs-s3-core";
-import { parseS3File } from "./parse-s3-file";
-import { toS3LocationString } from "./to-s3-location-string";
+import {S3WriteOptions} from "./s3-write-options";
+import { S3FileService } from "./s3-file-service";
 
-export class MockS3FileService extends MemoryFileService<S3File> {
+export class MockS3FileService extends InMemory<S3File, S3WriteOptions, S3FileService>(S3FileService) {
     
-  constructor(scanner: Scanner, pollPeriod = 100) {
-      super(scanner, pollPeriod);
-  }
-
-  parse<F extends S3File>(fileOrFolder: F): F {
-    return parseS3File(fileOrFolder);
-  }
-
-  toLocationString(f: S3File): string {
-      return toS3LocationString(f);
+  constructor(scanner: Scanner) {
+      super(scanner);
   }
 
 } 

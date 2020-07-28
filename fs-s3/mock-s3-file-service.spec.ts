@@ -10,7 +10,7 @@ describe("Mock S3 file service", () => {
 
     beforeEach(() => {
         originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
-        jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
         const contentScanner = new NodeContentScanner();
         instance = new MockS3FileService(contentScanner);
         tester = new FileServiceTester<S3File>(instance, contentScanner);
