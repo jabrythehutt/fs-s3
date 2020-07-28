@@ -11,7 +11,7 @@ import {FileServiceTester, generateTests, LocalS3Server} from "../test";
 import {S3WriteOptions} from "./s3-write-options";
 import {S3File} from "./s3-file";
 import getPort from "get-port";
-import { NodeContentScanner } from "@jabrythehutt/fs-s3-node";
+import {NodeContentScanner} from "@jabrythehutt/fs-s3-node";
 
 const bucketExistError = "The specified bucket does not exist";
 
@@ -96,6 +96,7 @@ describe("S3 file service", () => {
             key: "foo/bar/foo.txt",
             bucket: testBucket
         };
+
         async function uploadFileContent() {
             await uploadFile(file, fileContent);
         }
