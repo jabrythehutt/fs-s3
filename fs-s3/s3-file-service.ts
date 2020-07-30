@@ -17,8 +17,8 @@ import {defaultLinkExpiryPeriod} from "./default-link-expiry-period";
 import {S3File} from "./s3-file";
 import {AbstractFileService} from "./abstract-file-service";
 import {ScannedS3File} from "./scanned-s3-file";
-import { toS3LocationString } from "./to-s3-location-string";
-import { parseS3File } from "./parse-s3-file";
+import {toS3LocationString} from "./to-s3-location-string";
+import {parseS3File} from "./parse-s3-file";
 
 export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
@@ -34,9 +34,9 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         this.s3Promise = this.toPromise(s3);
     }
 
-    
+
     async writeFile(request: WriteRequest<S3File>,
-        options: OverwriteOptions & S3WriteOptions): Promise<void> {
+                    options: OverwriteOptions & S3WriteOptions): Promise<void> {
         options = {
             ...defaultS3WriteOptions,
             ...options,
@@ -57,7 +57,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
     }
 
     async copyFile(request: CopyOperation<S3File, S3File>,
-        options: CopyOptions<S3File, S3File> & S3WriteOptions): Promise<void> {
+                   options: CopyOptions<S3File, S3File> & S3WriteOptions): Promise<void> {
         const s3 = await this.s3Promise;
         await s3.copyObject({
             ...this.toS3WriteParams(request.destination, options),
@@ -89,20 +89,6 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         return response.Body as FileContent;
     }
 
-    protected async toPromise<T>(input: T | Promise<T>): Promise<T> {
-        return input;
-    }
-
-    protected toScannedS3File<T extends S3File>(bucket: string, item: S3.Object): Scanned<T> {
-        return {
-            bucket,
-            key: item.Key,
-            md5: JSON.parse(item.ETag),
-            size: item.Size,
-            mimeType: getType(item.Key)
-        } as Scanned<T>;
-    }
-
     async getReadUrl(file: S3File,
                      expires: number = defaultLinkExpiryPeriod): Promise<Optional<string>> {
         const scannedFile = await this.scan(file);
@@ -122,40 +108,8 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         });
     }
 
-    protected headResponseToFileInfo<F extends S3File>(file: F, response: HeadObjectOutput): Scanned<F> {
-        return {
-            ...file,
-            size: response.ContentLength,
-            md5: JSON.parse(response.ETag),
-            mimeType: response.ContentType
-        };
-    }
-
     toLocationString(input: S3File): string {
         return toS3LocationString(input);
-    }
-
-    protected toS3WriteParams(destination: S3File, options: S3WriteOptions): PutObjectRequest {
-        return {
-            ...this.toS3LocationParams(destination),
-            ACL: options.makePublic ? "public-read" : undefined,
-            ...(options.s3Params || {})
-        };
-    }
-
-    protected async getObject(file: S3File): Promise<GetObjectOutput> {
-        const s3 = await this.s3Promise;
-        return s3.getObject(this.toS3LocationParams(file)).promise();
-    }
-
-    protected toS3LocationParams(file: S3File): { Bucket: string, Key: string } {
-        return {Bucket: file.bucket, Key: file.key};
-    }
-
-    protected toFiles<T extends S3File>(bucket: string, response: ListObjectsV2Output): Scanned<T>[] {
-        return response.Contents
-            .filter(o => !o.Key.endsWith("/"))
-            .map(o => this.toScannedS3File(bucket, o));
     }
 
     async* list<T extends S3File>(fileOrFolder: T): AsyncIterable<Scanned<T>> {
@@ -185,6 +139,52 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
 
     parse<F extends S3File>(fileOrFolder: F): F {
         return parseS3File(fileOrFolder);
+    }
+
+    protected async toPromise<T>(input: T | Promise<T>): Promise<T> {
+        return input;
+    }
+
+    protected toScannedS3File<T extends S3File>(bucket: string, item: S3.Object): Scanned<T> {
+        return {
+            bucket,
+            key: item.Key,
+            md5: JSON.parse(item.ETag),
+            size: item.Size,
+            mimeType: getType(item.Key)
+        } as Scanned<T>;
+    }
+
+    protected headResponseToFileInfo<F extends S3File>(file: F, response: HeadObjectOutput): Scanned<F> {
+        return {
+            ...file,
+            size: response.ContentLength,
+            md5: JSON.parse(response.ETag),
+            mimeType: response.ContentType
+        };
+    }
+
+    protected toS3WriteParams(destination: S3File, options: S3WriteOptions): PutObjectRequest {
+        return {
+            ...this.toS3LocationParams(destination),
+            ACL: options.makePublic ? "public-read" : undefined,
+            ...(options.s3Params || {})
+        };
+    }
+
+    protected async getObject(file: S3File): Promise<GetObjectOutput> {
+        const s3 = await this.s3Promise;
+        return s3.getObject(this.toS3LocationParams(file)).promise();
+    }
+
+    protected toS3LocationParams(file: S3File): { Bucket: string, Key: string } {
+        return {Bucket: file.bucket, Key: file.key};
+    }
+
+    protected toFiles<T extends S3File>(bucket: string, response: ListObjectsV2Output): Scanned<T>[] {
+        return response.Contents
+            .filter(o => !o.Key.endsWith("/"))
+            .map(o => this.toScannedS3File(bucket, o));
     }
 
 }
