@@ -67,3 +67,4 @@ jobs:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         with:
           coverageCommand: yarn coverage
+          coverageLocations: ${{github.workspace}}/bazel-out/_coverage/_coverage_report.dat:lcov
