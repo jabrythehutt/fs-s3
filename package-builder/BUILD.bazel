@@ -1,21 +1,22 @@
 package(default_visibility = ["//visibility:public"])
+
 load("simple_cli.bzl", "simple_cli")
 
 deps = [
     "@npm//yargs",
     "@npm//lodash",
     "@npm//@types/node",
-    "@npm//@types/lodash"
+    "@npm//@types/lodash",
 ]
 
 simple_cli(
     name = "cli",
     file = "generate-registry-package-json.ts",
-    deps = deps
+    deps = deps,
 )
 
 simple_cli(
     name = "merge_json",
     file = "merge-json.ts",
-    deps = deps
+    deps = deps,
 )
