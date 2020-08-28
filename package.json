@@ -6,6 +6,7 @@
     "start:cache": "bazels3cache",
     "build": "bazelisk build //...",
     "lint": "eslint . --ext .ts",
+    "coverage": "bazelisk coverage --instrument_test_targets --combined_report=lcov  //...",
     "test": "bazelisk test //...",
     "deploy": "npm version patch from-git"
   },
