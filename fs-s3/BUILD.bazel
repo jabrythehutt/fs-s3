@@ -41,3 +41,5 @@ test(
     srcs = glob(tests),
     deps = test_deps + runtime_deps,
 )
+
+package()
