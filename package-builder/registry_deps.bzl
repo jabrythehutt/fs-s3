@@ -13,7 +13,7 @@ def registry_deps(name, data, root_package):
     query_input = to_query_input(data)
     native.genquery(
         name = dep_labels_name,
-        expression = "kind(node_module_library, {query_input})".format(query_input = query_input),
+        expression = "kind(_js_library, {query_input})".format(query_input = query_input),
         scope = data
     )
 
