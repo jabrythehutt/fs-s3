@@ -1,11 +1,13 @@
 package(default_visibility = ["//visibility:public"])
+
 load("//tools:index.bzl", "library", "package", "test")
 
 all_sources = ["*.ts"]
+
 tests = ["*.spec.ts"]
 
 compile_deps = [
-    "@npm//@types/node"
+    "@npm//@types/node",
 ]
 
 runtime_deps = [
@@ -14,12 +16,15 @@ runtime_deps = [
     "@npm//mkdirp",
     "@npm//fp-ts",
     "//fs-s3-core",
-    "//fs-s3"
+    "//fs-s3",
 ]
 
 library(
-    srcs = glob(all_sources, exclude = tests),
-    deps = runtime_deps + compile_deps
+    srcs = glob(
+        all_sources,
+        exclude = tests,
+    ),
+    deps = runtime_deps + compile_deps,
 )
 
 test_deps = [
@@ -31,13 +36,12 @@ test_deps = [
     "@npm//@types/jasmine",
     "@npm//jasmine",
     "@npm//axios",
-    "//test"
+    "//test",
 ]
 
 test(
     srcs = glob(tests),
-    deps = test_deps + runtime_deps
+    deps = test_deps + runtime_deps,
 )
 
-package(
-)
+package()

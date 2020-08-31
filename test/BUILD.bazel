@@ -1,4 +1,5 @@
 package(default_visibility = ["//visibility:public"])
+
 load("//tools:index.bzl", "library")
 
 runtime_deps = [
@@ -8,7 +9,7 @@ runtime_deps = [
     "@npm//del",
     "@npm//fp-ts",
     "@npm//mime",
-    "//fs-s3-core"
+    "//fs-s3-core",
 ]
 
 compile_deps = [
@@ -18,5 +19,5 @@ compile_deps = [
 
 library(
     srcs = glob(["*.ts"]),
-    deps = compile_deps + runtime_deps
+    deps = compile_deps + runtime_deps,
 )

@@ -6,6 +6,7 @@
     "start:cache": "bazels3cache",
     "build": "bazelisk build //...",
     "lint": "eslint . --ext .ts",
+    "coverage": "bazelisk coverage --instrument_test_targets --combined_report=lcov //...",
     "test": "bazelisk test //...",
     "deploy": "npm version patch from-git"
   },
@@ -24,12 +25,12 @@
   },
   "homepage": "https://github.com/jabrythehutt/fs-s3#readme",
   "devDependencies": {
-    "@bazel/bazelisk": "^1.5.0",
-    "@bazel/jasmine": "^1.7.0",
-    "@bazel/karma": "^1.7.0",
-    "@bazel/rollup": "^1.7.0",
-    "@bazel/terser": "^1.7.0",
-    "@bazel/typescript": "^1.7.0",
+    "@bazel/bazelisk": "^1.6.1",
+    "@bazel/jasmine": "^2.0.3",
+    "@bazel/karma": "^2.0.3",
+    "@bazel/rollup": "^2.0.3",
+    "@bazel/terser": "^2.0.3",
+    "@bazel/typescript": "^2.0.3",
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
     "@types/jasmine": "^3.5.10",
@@ -53,7 +54,6 @@
     "jasmine": "^3.5.0",
     "jsonpath": "^1.0.2",
     "lodash": "^4.17.19",
-    "mkdirp": "^1.0.4",
     "nyc": "^15.1.0",
     "s3rver": "^3.5.0",
     "source-map-support": "^0.5.19",
@@ -64,7 +64,8 @@
   },
   "dependencies": {
     "fp-ts": "^2.6.2",
-    "mime": "2.4.4"
+    "mime": "2.4.4",
+    "mkdirp": "^1.0.4"
   },
   "peerDependencies": {
     "aws-sdk": ">=2.400.0"

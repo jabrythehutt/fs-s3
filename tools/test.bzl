@@ -1,5 +1,5 @@
-load("@npm_bazel_typescript//:index.bzl", "ts_library")
-load("@npm_bazel_jasmine//:index.bzl", "jasmine_node_test")
+load("@npm//@bazel/typescript:index.bzl", "ts_library")
+load("@npm//@bazel/jasmine:index.bzl", "jasmine_node_test")
 
 def test(srcs, name = "test", deps = []):
     lib_name = native.package_name()
@@ -11,7 +11,6 @@ def test(srcs, name = "test", deps = []):
     )
 
     jasmine_node_test(
-        coverage = True,
         name = name,
         deps = [test_lib_name] + deps
     )

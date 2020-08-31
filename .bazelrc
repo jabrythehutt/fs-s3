@@ -62,6 +62,10 @@ build --define=angular_ivy_enabled=True
 # Enable this with --config=release
 build:release --stamp --workspace_status_command=./tools/bazel_stamp_vars.sh
 
+# When running `bazel coverage` --instrument_test_targets needs to be set in order to
+# collect coverage information from test targets
+coverage --instrument_test_targets
+
 # Load any settings specific to the current user.
 # .bazelrc.user should appear in .gitignore so that settings are not shared with team members
 # This needs to be last statement in this
