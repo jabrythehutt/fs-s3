@@ -156,20 +156,13 @@ export class FileService implements IFileService {
             ...extraParams
         };
         const s3 = await this.s3Promise;
-        await new Promise((resolve, reject) => {
-            const request = s3.upload(s3Params);
+        const request = s3.upload(s3Params);
+        if (options.progressListener) {
             request.on("httpUploadProgress", (progressEvent) => {
-                if (options.progressListener) {
-                    options.progressListener(destination, progressEvent.loaded, progressEvent.total);
-                }
-            }).send((err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
+                options.progressListener(destination, progressEvent.loaded, progressEvent.total);
+            })
+        }
+        await request.promise();
         this.logger.debug(completeMessage);
         return this.scanFile(destination);
 
