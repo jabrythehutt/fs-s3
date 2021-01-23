@@ -149,7 +149,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         return {
             bucket,
             key: item.Key,
-            md5: JSON.parse(item.ETag),
+            md5: JSON.parse(item.ETag) as string,
             size: item.Size,
             mimeType: getType(item.Key)
         } as Scanned<T>;
@@ -159,7 +159,7 @@ export class S3FileService extends AbstractFileService<S3File, S3WriteOptions> {
         return {
             ...file,
             size: response.ContentLength,
-            md5: JSON.parse(response.ETag),
+            md5: JSON.parse(response.ETag) as string,
             mimeType: response.ContentType
         };
     }

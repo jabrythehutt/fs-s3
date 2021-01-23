@@ -7,7 +7,7 @@ const args = yargs.option("inputPath", {requiresArg: true, string: true})
     .option("outputPath", {requiresArg: true, string: true}).argv;
 
 const rootPackageJsonString = readFileSync(args.rootPackage).toString();
-const rootPackageJson = JSON.parse(rootPackageJsonString);
+const rootPackageJson = JSON.parse(rootPackageJsonString) as {dependencies: Record<string, string>};
 const rootDeps = rootPackageJson.dependencies || {};
 
 const libDepNames = readFileSync(args.inputPath).toString()
