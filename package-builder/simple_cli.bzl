@@ -2,7 +2,9 @@ load("@npm//@bazel/typescript:index.bzl", "ts_library")
 load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
 
 def simple_cli(name, file, deps):
+
     lib_name = name + "_lib"
+
     ts_library(
         name  = lib_name,
         srcs = [file],
@@ -11,6 +13,7 @@ def simple_cli(name, file, deps):
     )
 
     compiled_lib_name = name + "_compiled"
+    
     native.filegroup(
         name = compiled_lib_name,
         srcs = [
