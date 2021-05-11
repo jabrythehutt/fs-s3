@@ -53,7 +53,7 @@
     "get-port": "^5.1.1",
     "jasmine": "^3.5.0",
     "jsonpath": "^1.0.2",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "nyc": "^15.1.0",
     "s3rver": "^3.5.0",
     "source-map-support": "^0.5.19",
