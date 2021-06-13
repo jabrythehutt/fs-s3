@@ -13,6 +13,7 @@ def package(name = "package", srcs = [], package_layers = []):
     pkg_npm(
         name = name,
         srcs = srcs,
+        substitutions = {"0.0.0-PLACEHOLDER": "{BUILD_SCM_VERSION}"},
         deps = [lib_name, package_json_name]
     )
 
